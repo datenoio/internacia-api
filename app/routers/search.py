@@ -2,20 +2,11 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.dependencies import InternaciaClientDep, StubClient
+from app.dependencies import InternaciaClientDep
 from app.models.responses import SearchResponse
-from app.utils import convert_numpy_to_python, handle_sdk_error
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/search", tags=["search"])
-
-
-def _check_client(client):
-    """Check if client is available."""
-    if isinstance(client, StubClient):
-        raise HTTPException(
-            status_code=501,
-            detail="SDK not available"
-        )
 
 
 @router.get("", response_model=SearchResponse)
@@ -33,7 +24,7 @@ async def fuzzy_search(
     - Country names (in any language via native_names)
     - Country codes (ISO 3166-1 alpha-2, alpha-3, numeric)
     - International block names
-    - Block translations (in any language)
+    - Block names in other languages
     - Block acronyms (in any language)
     - Block IDs
     - Block tags
@@ -48,7 +39,6 @@ async def fuzzy_search(
         Search results from internacia-db
     """
     try:
-        _check_client(client)
         results = client.search.fuzzy(
             query=query,
             limit=limit,
@@ -56,9 +46,6 @@ async def fuzzy_search(
             search_intblocks=include_blocks
         )
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if results:
-            results = [convert_numpy_to_python(result) for result in results]
 
         return SearchResponse(
             results=results or [],
@@ -88,12 +75,8 @@ async def search_countries(
         Search results for countries only
     """
     try:
-        _check_client(client)
         results = client.search.search_countries(query=query, limit=limit)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if results:
-            results = [convert_numpy_to_python(result) for result in results]
 
         return SearchResponse(
             results=results or [],
@@ -123,12 +106,8 @@ async def search_intblocks(
         Search results for blocks only
     """
     try:
-        _check_client(client)
         results = client.search.search_intblocks(query=query, limit=limit)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if results:
-            results = [convert_numpy_to_python(result) for result in results]
 
         return SearchResponse(
             results=results or [],

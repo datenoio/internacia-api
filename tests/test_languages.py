@@ -166,3 +166,25 @@ def test_get_languages_by_country_sdk_error(client: TestClient, mock_client: Moc
     assert response.status_code == 500
     data = response.json()
     assert "error" in data
+
+
+def test_languages_null_column_is_treated_as_empty(client: TestClient, mock_client: Mock):
+    """A NULL `languages` column (8 countries in internacia-db 3.0.0) is treated as empty."""
+    mock_countries = [
+        {"code": "AQ", "languages": None},
+        {"code": "FR", "languages": [{"code": "fra", "name": "French"}]},
+    ]
+    mock_client.countries.get_all = Mock(return_value=mock_countries)
+    mock_client.countries.get_by_code = Mock(return_value=mock_countries[0])
+
+    response = client.get("/languages")
+    assert response.status_code == 200
+    assert response.json() == {"items": [{"code": "fra", "name": "French"}], "count": 1}
+
+    response = client.get("/languages/fra")
+    assert response.status_code == 200
+    assert response.json() == {"data": {"code": "fra", "name": "French"}}
+
+    response = client.get("/languages/country/AQ")
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "count": 0}

@@ -1,17 +1,27 @@
 """FastAPI application main entry point."""
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
+from app.dependencies import create_client
 from app.routers import blocks, countries, currencies, health, languages, regions, search, timezones
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Open the database before serving; startup fails if it cannot be opened."""
+    app.state.client = create_client()
+    yield
+
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -19,15 +29,16 @@ app = FastAPI(
     version=settings.api_version,
     description=settings.api_description,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=settings.cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
@@ -64,7 +75,6 @@ async def general_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={
             "error": "Internal server error",
-            "detail": str(exc) if settings.debug else "An unexpected error occurred",
             "status_code": 500,
             "path": str(request.url.path)
         }

@@ -2,20 +2,11 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.dependencies import InternaciaClientDep, StubClient
+from app.dependencies import InternaciaClientDep
 from app.models.responses import CountryResponse, ListResponse
-from app.utils import convert_numpy_to_python, handle_sdk_error
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/countries", tags=["countries"])
-
-
-def _check_client(client):
-    """Check if client is available."""
-    if isinstance(client, StubClient):
-        raise HTTPException(
-            status_code=501,
-            detail="SDK not available"
-        )
 
 
 @router.get("/code/{code}", response_model=CountryResponse)
@@ -33,7 +24,6 @@ async def get_country_by_code(
         Country data from internacia-db
     """
     try:
-        _check_client(client)
         country = client.countries.get_by_code(code)
 
         if country is None:
@@ -42,8 +32,6 @@ async def get_country_by_code(
                 detail=f"Country with code '{code}' not found"
             )
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        country = convert_numpy_to_python(country)
         return CountryResponse(data=country)
     except HTTPException:
         raise
@@ -66,7 +54,6 @@ async def get_country_by_iso3(
         Country data from internacia-db
     """
     try:
-        _check_client(client)
         country = client.countries.get_by_iso3(iso3code)
 
         if country is None:
@@ -75,8 +62,6 @@ async def get_country_by_iso3(
                 detail=f"Country with ISO3 code '{iso3code}' not found"
             )
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        country = convert_numpy_to_python(country)
         return CountryResponse(data=country)
     except HTTPException:
         raise
@@ -99,7 +84,6 @@ async def get_country_by_numeric_code(
         Country data from internacia-db
     """
     try:
-        _check_client(client)
         country = client.countries.get_by_numeric_code(numeric_code)
 
         if country is None:
@@ -108,8 +92,6 @@ async def get_country_by_numeric_code(
                 detail=f"Country with numeric code '{numeric_code}' not found"
             )
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        country = convert_numpy_to_python(country)
         return CountryResponse(data=country)
     except HTTPException:
         raise
@@ -132,12 +114,8 @@ async def get_all_countries(
         List of all countries from internacia-db
     """
     try:
-        _check_client(client)
         countries = client.countries.get_all(limit=limit)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -160,12 +138,8 @@ async def get_countries_by_region(
         List of countries in the specified region
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_region(region_id)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -188,12 +162,8 @@ async def get_countries_by_income_level(
         List of countries with the specified income level
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_income_level(income_level_id)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -210,12 +180,8 @@ async def get_un_members(client: InternaciaClientDep):
         List of UN member countries
     """
     try:
-        _check_client(client)
         countries = client.countries.get_un_members()
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -232,12 +198,8 @@ async def get_independent_countries(client: InternaciaClientDep):
         List of independent countries
     """
     try:
-        _check_client(client)
         countries = client.countries.get_independent()
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -260,12 +222,8 @@ async def get_countries_by_continent(
         List of countries on the specified continent
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_continent(continent)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -288,12 +246,8 @@ async def get_countries_by_currency(
         List of countries using the specified currency
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_currency(currency_code)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -316,12 +270,8 @@ async def get_countries_by_language(
         List of countries where the language is spoken
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_language(language_code)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if countries:
-            countries = [convert_numpy_to_python(country) for country in countries]
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
     except HTTPException:
         raise
@@ -338,7 +288,6 @@ async def get_countries_count(client: InternaciaClientDep):
         Total count of countries
     """
     try:
-        _check_client(client)
         count = client.countries.count()
 
         return {"count": count}

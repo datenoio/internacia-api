@@ -2,20 +2,11 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.dependencies import InternaciaClientDep, StubClient
+from app.dependencies import InternaciaClientDep
 from app.models.responses import BlockResponse, ListResponse
-from app.utils import convert_numpy_to_python, handle_sdk_error
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/blocks", tags=["blocks"])
-
-
-def _check_client(client):
-    """Check if client is available."""
-    if isinstance(client, StubClient):
-        raise HTTPException(
-            status_code=501,
-            detail="SDK not available"
-        )
 
 
 @router.get("/count", response_model=dict)
@@ -27,7 +18,6 @@ async def get_blocks_count(client: InternaciaClientDep):
         Total count of blocks
     """
     try:
-        _check_client(client)
         count = client.intblocks.count()
 
         return {"count": count}
@@ -52,7 +42,6 @@ async def get_block_by_id(
         Block data from internacia-db
     """
     try:
-        _check_client(client)
         block = client.intblocks.get_by_id(block_id)
 
         if block is None:
@@ -61,8 +50,6 @@ async def get_block_by_id(
                 detail=f"International block '{block_id}' not found"
             )
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        block = convert_numpy_to_python(block)
         return BlockResponse(data=block)
     except HTTPException:
         raise
@@ -85,12 +72,8 @@ async def get_all_blocks(
         List of all international blocks from internacia-db
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_all(limit=limit)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -113,12 +96,8 @@ async def get_blocks_by_type(
         List of blocks of the specified type
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_blocktype(blocktype)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -141,12 +120,8 @@ async def get_blocks_by_status(
         List of blocks with the specified status
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_status(status)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -169,12 +144,8 @@ async def get_blocks_by_geographic_scope(
         List of blocks with the specified geographic scope
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_geographic_scope(scope)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -197,12 +168,8 @@ async def get_blocks_by_member(
         List of blocks that include the specified country
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_member(country_code)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -225,12 +192,8 @@ async def get_blocks_by_acronym(
         List of blocks with the specified acronym
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_acronym(acronym)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -253,12 +216,8 @@ async def get_blocks_by_tag(
         List of blocks with the specified tag
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_tag(tag)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -281,12 +240,8 @@ async def get_blocks_by_topic(
         List of blocks with the specified topic
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_topic(topic_key)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise
@@ -309,12 +264,8 @@ async def get_blocks_by_founded_year(
         List of blocks founded in the specified year
     """
     try:
-        _check_client(client)
         blocks = client.intblocks.get_by_founded_year(year)
 
-        # Convert numpy arrays to Python lists for JSON serialization
-        if blocks:
-            blocks = [convert_numpy_to_python(block) for block in blocks]
         return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
     except HTTPException:
         raise

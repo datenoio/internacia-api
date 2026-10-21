@@ -17,7 +17,7 @@ class HealthResponse(BaseModel):
     """Health check response model."""
 
     status: str = Field(..., description="Service status")
-    sdk_connected: bool = Field(..., description="Whether SDK is connected")
+    sdk_connected: bool = Field(..., description="Whether the database answered a query")
     version: str = Field(..., description="API version")
 
 

@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     port: int = 8000
     debug: bool = False
 
+    # Allowed CORS origins, e.g. CORS_ORIGINS='["https://example.org"]'
+    cors_origins: list[str] = ["*"]
+
     # Path to internacia.duckdb; when unset the SDK falls back to its download cache
     internacia_db_path: str | None = None
 

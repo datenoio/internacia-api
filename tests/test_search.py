@@ -50,12 +50,12 @@ def test_fuzzy_search_with_limit(client: TestClient, mock_client: Mock):
 
 
 def test_fuzzy_search_with_search_options(client: TestClient, mock_client: Mock):
-    """Test fuzzy search with search_countries and search_intblocks options."""
+    """Test fuzzy search with include_countries and include_blocks options."""
     mock_results = [{"code": "US", "name": "United States"}]
 
     mock_client.search.fuzzy = Mock(return_value=mock_results)
 
-    response = client.get("/search?query=united&search_countries=true&search_intblocks=false")
+    response = client.get("/search?query=united&include_countries=true&include_blocks=false")
 
     assert response.status_code == 200
     mock_client.search.fuzzy.assert_called_once_with(
