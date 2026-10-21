@@ -1,7 +1,5 @@
 """Application configuration settings."""
 
-from typing import Optional
-
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
@@ -26,7 +24,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Path to internacia.duckdb; when unset the SDK falls back to its download cache
-    internacia_db_path: Optional[str] = None
+    internacia_db_path: str | None = None
 
 
 # Global settings instance

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import health, countries, blocks, search, currencies, languages, regions, timezones
+from app.routers import blocks, countries, currencies, health, languages, regions, search, timezones
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

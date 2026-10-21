@@ -1,9 +1,10 @@
 """Region-related endpoints."""
 
 from fastapi import APIRouter, HTTPException
+
 from app.dependencies import InternaciaClientDep, StubClient
-from app.utils import handle_sdk_error
 from app.models.responses import ListResponse
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/regions", tags=["regions"])
 

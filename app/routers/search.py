@@ -1,9 +1,10 @@
 """Search-related endpoints."""
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+
 from app.dependencies import InternaciaClientDep, StubClient
-from app.utils import handle_sdk_error, convert_numpy_to_python
 from app.models.responses import SearchResponse
+from app.utils import convert_numpy_to_python, handle_sdk_error
 
 router = APIRouter(prefix="/search", tags=["search"])
 

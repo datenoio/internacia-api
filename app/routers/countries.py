@@ -1,12 +1,10 @@
 """Country-related endpoints."""
 
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException, Query
 
 from app.dependencies import InternaciaClientDep, StubClient
 from app.models.responses import CountryResponse, ListResponse
-from app.utils import handle_sdk_error, convert_numpy_to_python
+from app.utils import convert_numpy_to_python, handle_sdk_error
 
 router = APIRouter(prefix="/countries", tags=["countries"])
 
@@ -122,7 +120,7 @@ async def get_country_by_numeric_code(
 @router.get("", response_model=ListResponse)
 async def get_all_countries(
     client: InternaciaClientDep,
-    limit: Optional[int] = Query(None, description="Maximum number of results", ge=1)
+    limit: int | None = Query(None, description="Maximum number of results", ge=1)
 ):
     """
     Get all countries.

@@ -1,6 +1,7 @@
 """Utility functions for SDK integration."""
 
 from typing import Any
+
 from fastapi import HTTPException
 
 from app.dependencies import StubClient
@@ -9,43 +10,43 @@ from app.dependencies import StubClient
 def convert_numpy_to_python(obj: Any) -> Any:
     """
     Recursively convert numpy arrays and other numpy types to Python native types.
-    
+
     This function handles the case where DuckDB/pandas returns numpy arrays
     that FastAPI cannot serialize.
-    
+
     Args:
         obj: Object that may contain numpy arrays
-        
+
     Returns:
         Object with numpy arrays converted to Python lists
     """
     try:
         import numpy as np
-        
+
         # Convert numpy arrays to lists
         if isinstance(obj, np.ndarray):
             return obj.tolist()
-        
+
         # Convert numpy scalars to Python types
         if isinstance(obj, (np.integer, np.floating)):
             return obj.item()
-        
+
         # Convert numpy bool to Python bool
         if isinstance(obj, np.bool_):
             return bool(obj)
-        
+
     except ImportError:
         # numpy not available, skip conversion
         pass
-    
+
     # Recursively process dictionaries
     if isinstance(obj, dict):
         return {key: convert_numpy_to_python(value) for key, value in obj.items()}
-    
+
     # Recursively process lists
     if isinstance(obj, list):
         return [convert_numpy_to_python(item) for item in obj]
-    
+
     # Return as-is for other types
     return obj
 

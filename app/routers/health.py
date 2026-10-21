@@ -1,9 +1,10 @@
 """Health check endpoints."""
 
 from fastapi import APIRouter
+
+from app.config import settings
 from app.dependencies import InternaciaClientDep, StubClient
 from app.models.responses import HealthResponse
-from app.config import settings
 
 router = APIRouter(prefix="/health", tags=["health"])
 

@@ -1,8 +1,9 @@
 """FastAPI dependencies for dependency injection."""
 
 from functools import lru_cache
-from typing import Annotated, Optional
 from pathlib import Path
+from typing import Annotated
+
 from fastapi import Depends
 
 try:
@@ -19,8 +20,7 @@ from app.config import settings
 class StubClient:
     """Stub client used when SDK is not available."""
 
-
-@lru_cache()
+@lru_cache
 def get_internacia_client():
     """
     Create and return a singleton InternaciaClient instance.
@@ -51,4 +51,4 @@ def get_internacia_client():
 
 # Dependency annotation for use in route handlers
 # Use Optional type to handle stub client case
-InternaciaClientDep = Annotated[Optional[object], Depends(get_internacia_client)]
+InternaciaClientDep = Annotated[object | None, Depends(get_internacia_client)]
