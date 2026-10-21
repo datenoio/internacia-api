@@ -16,8 +16,23 @@ def mock_client() -> Mock:
     client = Mock()
     client.countries = Mock()
     client.intblocks = Mock()
+    client.memberships = Mock()
+    client.blocktypes = Mock()
     client.search = Mock()
+    client.intblocks.resolve_id = Mock(side_effect=_unknown)
+    client.countries.resolve_code = Mock(side_effect=_unknown)
     return client
+
+
+def _unknown(value: str) -> dict:
+    return {
+        "input": value.upper(),
+        "id": None,
+        "status": "unknown",
+        "since": None,
+        "note": None,
+        "disambiguated": None,
+    }
 
 
 @pytest.fixture
@@ -34,6 +49,6 @@ def client(override_get_client) -> TestClient:
     Create a test client with mocked dependencies.
 
     Not used as a context manager, so the startup hook that opens the real database
-    does not run.
+    does not run. Unhandled exceptions become the API's 500 response instead of being raised.
     """
-    return TestClient(app)
+    return TestClient(app, raise_server_exceptions=False)

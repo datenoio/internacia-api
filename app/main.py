@@ -6,12 +6,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from internacia import InternaciaError
 
 from app.caching import EXPOSED_HEADERS, DataVersionMiddleware, data_identity
 from app.config import settings
 from app.dependencies import create_client
 from app.routers import (
     blocks,
+    blocktypes,
     countries,
     currencies,
     health,
@@ -21,6 +23,7 @@ from app.routers import (
     search,
     timezones,
 )
+from app.utils import handle_sdk_error
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -62,6 +65,7 @@ app.include_router(health.router)
 app.include_router(meta.router)
 app.include_router(countries.router)
 app.include_router(blocks.router)
+app.include_router(blocktypes.router)
 app.include_router(search.router)
 app.include_router(currencies.router)
 app.include_router(languages.router)
@@ -78,9 +82,17 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={
             "error": exc.detail,
             "status_code": exc.status_code,
-            "path": str(request.url.path)
-        }
+            "path": str(request.url.path),
+        },
+        headers=exc.headers,
     )
+
+
+@app.exception_handler(InternaciaError)
+async def sdk_exception_handler(request: Request, exc: InternaciaError):
+    """SDK validation errors are 400, not-found 404, anything else a logged generic 500."""
+    error = handle_sdk_error(exc, f"handling {request.url.path}")
+    return await http_exception_handler(request, error)
 
 
 @app.exception_handler(Exception)

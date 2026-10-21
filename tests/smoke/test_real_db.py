@@ -40,12 +40,24 @@ def api() -> Iterator[TestClient]:
 
 
 def items(n: int | None = None, at_least: int = 1) -> Check:
+    """A page whose whole list has ``n`` (or at least ``at_least``) items."""
+
     def check(body: Any) -> None:
-        assert body["count"] == len(body["items"])
+        expected_count = min(body["total"] - body["offset"], body["limit"])
+        assert body["count"] == len(body["items"]) == expected_count
         if n is None:
-            assert body["count"] >= at_least
+            assert body["total"] >= at_least
         else:
-            assert body["count"] == n
+            assert body["total"] == n
+        assert (body["next"] is None) == (body["offset"] + body["count"] >= body["total"])
+
+    return check
+
+
+def fields_only(*names: str) -> Check:
+    def check(body: Any) -> None:
+        rows = body["items"] if "items" in body else [body["data"]]
+        assert rows and all(list(row) == list(names) for row in rows)
 
     return check
 
@@ -82,7 +94,7 @@ OK_ROUTES: list[tuple[str, Check]] = [
     ("/", anything),
     # countries
     ("/countries", items(256)),
-    ("/countries?limit=5", items(5)),
+    ("/countries?limit=5", items(256)),
     ("/countries/count", count(256)),
     ("/countries/code/US", data(code="US", iso3code="USA")),
     ("/countries/code/us", data(code="US")),
@@ -101,7 +113,7 @@ OK_ROUTES: list[tuple[str, Check]] = [
     ("/countries/code/AQ", data(code="AQ", currencies=None, languages=None)),
     # blocks
     ("/blocks", items(1269)),
-    ("/blocks?limit=3", items(3)),
+    ("/blocks?limit=3", items(1269)),
     ("/blocks/count", count(1269)),
     ("/blocks/EU", data(id="EU")),
     ("/blocks/eu", data(id="EU")),
@@ -141,7 +153,21 @@ OK_ROUTES: list[tuple[str, Check]] = [
     ("/regions/ECS/countries", items(64)),
     ("/regions/country/US", data(id="NAC")),
     # timezones (placeholder until the SDK exposes them)
-    ("/timezones", items(0)),
+    ("/timezones", items(at_least=300)),
+    ("/timezones/country/RU", items(at_least=10)),
+    ("/timezones/Europe/Paris", data(timezone="Europe/Paris")),
+    # v3 surface
+    ("/blocks/EU/members", items(27)),
+    ("/blocks/eu/members?current=false", items(at_least=27)),
+    ("/countries/US/memberships", items(411)),
+    ("/countries/US/memberships?current=false", items(429)),
+    ("/blocktypes", items(78)),
+    ("/blocktypes/economic", data(id="economic")),
+    ("/blocks/member/US?current=true", items(411)),
+    # pagination and field selection
+    ("/countries?limit=10&offset=250", items(256)),
+    ("/blocks?fields=id,name&limit=5", fields_only("id", "name")),
+    ("/countries/code/FR?fields=code,name", fields_only("code", "name")),
 ]
 
 ERROR_ROUTES: list[tuple[str, int]] = [
@@ -184,3 +210,33 @@ def test_meta_and_cache_headers(api: TestClient) -> None:
     assert response.headers["X-Internacia-Version"] == meta["version"]
     cached = api.get("/blocks/EU", headers={"If-None-Match": response.headers["ETag"]})
     assert cached.status_code == 304
+
+
+def test_pagination_walks_the_whole_list(api: TestClient) -> None:
+    codes, url = [], "/countries?limit=100&fields=code"
+    while url:
+        body = api.get(url).json()
+        codes += [row["code"] for row in body["items"]]
+        url = body["next"]
+    assert len(codes) == len(set(codes)) == 256
+
+
+def test_retired_ids_redirect_when_the_database_has_aliases(api: TestClient) -> None:
+    has_aliases = api.app.state.client._db_manager.has_relation("intblocks_aliases")
+    response = api.get("/blocks/USAN/members?current=false", follow_redirects=False)
+    if not has_aliases:
+        assert response.status_code == 404
+        return
+    assert response.status_code == 301
+    assert response.headers["location"].endswith("/blocks/UNASUR/members?current=false")
+    assert api.get("/countries/code/KV", follow_redirects=False).headers["location"].endswith(
+        "/countries/code/XK"
+    )
+    assert api.get("/blocks/USAN").json()["data"]["id"] == "UNASUR"
+    assert api.get("/blocks/ASF").headers["X-Internacia-Disambiguated"] == "FSA"
+
+
+def test_deprecated_routes_advertise_successors(api: TestClient) -> None:
+    response = api.get("/currencies/EUR/countries")
+    assert response.headers["Deprecation"] == "true"
+    assert "/countries/currency/EUR" in response.headers["Link"]

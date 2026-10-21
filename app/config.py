@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # API Settings
     api_title: str = "Internacia API"
-    api_version: str = "0.1.0"
+    api_version: str = "0.2.0"
     api_description: str = "REST API for internacia-db using the internacia Python SDK"
 
     # Server Settings

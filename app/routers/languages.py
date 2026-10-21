@@ -1,126 +1,50 @@
-"""Language-related endpoints."""
+"""Language endpoints, from the internacia-db `country_languages` view."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.api import FieldsParam, Paging, mark_deprecated, page
 from app.dependencies import InternaciaClientDep
-from app.models.responses import ListResponse
-from app.utils import handle_sdk_error
+from app.models.responses import Language, LanguageEntry, Page, Record, Single
 
 router = APIRouter(prefix="/languages", tags=["languages"])
 
 
-@router.get("/{language_code}/countries", response_model=ListResponse)
-async def get_countries_by_language(
+@router.get("", response_model=Page[LanguageEntry])
+def list_languages(client: InternaciaClientDep, request: Request, paging: Paging):
+    """Languages (ISO 639-3) listed for countries, with the number of countries each."""
+    return page([dict(lang) for lang in client.countries.get_languages()], request, paging)
+
+
+@router.get("/country/{country_code}", response_model=Page[Language])
+def list_country_languages(
+    country_code: str, client: InternaciaClientDep, request: Request, paging: Paging
+):
+    """Languages of one country (empty for countries without languages)."""
+    if client.countries.get_by_code(country_code) is None:
+        raise HTTPException(404, detail=f"Country with code '{country_code}' not found")
+    rows = client.countries.get_country_languages(country_code)
+    return page([dict(lang) for lang in rows], request, paging)
+
+
+@router.get("/{language_code}/countries", response_model=Page[Record], deprecated=True)
+def list_countries_by_language_legacy(
     language_code: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    response: Response,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get countries where a specific language is spoken.
-
-    Args:
-        language_code: Language code (e.g., "eng", "fra", "spa")
-
-    Returns:
-        List of countries where the language is spoken
-    """
-    try:
-        countries = client.countries.get_by_language(language_code)
-
-        return ListResponse(items=countries or [], count=len(countries) if countries else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving countries by language") from e
+    """Deprecated: use `/countries/language/{language_code}`."""
+    mark_deprecated(response, f"/countries/language/{language_code}")
+    rows = client.countries.get_by_language(language_code)
+    return page([dict(r) for r in rows], request, paging, fields)
 
 
-@router.get("", response_model=ListResponse)
-async def list_languages(client: InternaciaClientDep):
-    """
-    List all unique languages from all countries.
-
-    Returns:
-        List of all unique languages
-    """
-    try:
-        all_countries = client.countries.get_all()
-
-        # Extract unique languages
-        languages_map = {}
-        for country in all_countries or []:
-            for language in country.get("languages") or []:
-                code = language.get("code")
-                if code and code not in languages_map:
-                    languages_map[code] = language
-
-        languages = list(languages_map.values())
-
-        return ListResponse(items=languages, count=len(languages))
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "listing languages") from e
-
-
-@router.get("/country/{country_code}", response_model=ListResponse)
-async def get_languages_by_country(
-    country_code: str,
-    client: InternaciaClientDep
-):
-    """
-    Get languages spoken in a specific country.
-
-    Args:
-        country_code: Country code (e.g., "US", "GB", "FR")
-
-    Returns:
-        List of languages for the country
-    """
-    try:
-        country = client.countries.get_by_code(country_code)
-
-        if country is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Country with code '{country_code}' not found"
-            )
-
-        languages = country.get("languages") or []
-
-        return ListResponse(items=languages, count=len(languages))
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving languages by country") from e
-
-
-@router.get("/{language_code}", response_model=dict)
-async def get_language(
-    language_code: str,
-    client: InternaciaClientDep
-):
-    """
-    Get language information by code.
-
-    Args:
-        language_code: Language code (e.g., "eng", "fra", "spa")
-
-    Returns:
-        Language data from internacia-db
-    """
-    try:
-        all_countries = client.countries.get_all()
-
-        # Find language in any country
-        for country in all_countries or []:
-            for language in country.get("languages") or []:
-                if language.get("code") == language_code:
-                    return {"data": language}
-
-        raise HTTPException(
-            status_code=404,
-            detail=f"Language with code '{language_code}' not found"
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving language") from e
+@router.get("/{language_code}", response_model=Single[LanguageEntry])
+def get_language(language_code: str, client: InternaciaClientDep):
+    """One language by ISO 639-3 code (e.g. `fra`)."""
+    language = client.countries.get_language(language_code)
+    if language is None:
+        raise HTTPException(404, detail=f"Language with code '{language_code}' not found")
+    return {"data": dict(language)}

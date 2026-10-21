@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - Unreleased
+
+API for the internacia-db 3.x model. **Breaking:** list responses are paginated.
+
+### Added
+- `/blocks/{id}/members` and `/countries/{code}/memberships` (current memberships by default;
+  `current=false` for the full history), `current` on `/blocks/member/{code}`.
+- `/blocktypes` and `/blocktypes/{id}`.
+- Time zones from the data: `/timezones`, `/timezones/{name}`, `/timezones/country/{code}` (they
+  were placeholders).
+- Retired IDs: `301` to the replacement for merged or renamed block ids and country codes, `410`
+  for retired ids, `X-Internacia-Disambiguated` for reused ids.
+- `fields=` on country and block routes.
+- Typed response models for pages, memberships, block types and catalogs in the OpenAPI schema.
+- `Deprecation` and `Link` headers on the deprecated duplicate routes.
+
+### Changed
+- **Breaking:** lists return one page with `total`, `limit` (default 100, max 1000), `offset`
+  and `next`; `count` is the number of items on the page.
+- Currencies, languages and regions come from the SDK catalogs (internacia-db views) instead of
+  scanning every country per request; catalog entries include `country_count`.
+- Handlers are synchronous and run in FastAPI's thread pool, so blocking DuckDB queries no longer
+  stall the event loop. SDK errors are mapped by one exception handler.
+
+### Deprecated
+- `/countries/{code}`, `/countries/alpha2/{code}`, `/countries/alpha3/{code}`,
+  `/currencies/{code}/countries`, `/languages/{code}/countries`, `/regions/{id}/countries`.
+
+### Removed
+- Unused request models and the empty `app/services` package.
+
+
 ### Added
 - Docker image: multi-stage, non-root, read-only-root compatible, `linux/amd64` and
   `linux/arm64`, with an internacia-db release baked in and checked against its SHA-256;

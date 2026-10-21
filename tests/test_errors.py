@@ -45,7 +45,7 @@ def test_server_errors_are_generic_500(client: TestClient, mock_client: Mock, ex
 
     assert response.status_code == 500
     body = response.json()
-    assert body["error"] == "Internal server error while searching blocks"
+    assert body["error"].startswith("Internal server error")
     assert str(exc) not in response.text
     assert "Binder" not in response.text
 

@@ -16,7 +16,7 @@ Self-hosted, read-only REST API for [internacia-db](https://github.com/datenoio/
 
 | internacia-api | internacia SDK | internacia-db |
 |---|---|---|
-| main | `>=0.4,<0.5` | 3.x (contract 3.x) |
+| 0.2.x | `>=0.4,<0.5` | 3.x (contract 3.x) |
 | 0.1.x | `>=0.3,<0.4` | 3.x |
 
 > **Temporary:** internacia 0.4.0 is not on PyPI yet. Until it is, `pyproject.toml` resolves the
@@ -107,13 +107,23 @@ Interactive docs: http://localhost:8000/docs (Swagger UI) and http://localhost:8
 
 ## Endpoints
 
-All endpoints are `GET`. Single records are returned as `{"data": {...}}`, lists as
-`{"items": [...], "count": n}`, search as `{"results": [...], "count": n, "query": "..."}`, and
-errors as `{"error": "...", "status_code": n, "path": "..."}`. Invalid input gives `400`/`422`,
-unknown IDs `404`; server errors give a generic `500` message and are logged.
+All endpoints are `GET`. The full, typed list is in the OpenAPI docs (`/docs`).
 
-Enum-like fields such as `status`, `geographic_scope` and `scope_category` are open strings:
-new internacia-db releases may add values, so clients should accept unknown ones.
+- **Single records:** `{"data": {...}}`.
+- **Lists:** one page: `{"items": [...], "count": n, "total": N, "limit": 100, "offset": 0,
+  "next": "<url or null>"}`. `limit` defaults to 100 (max 1000); follow `next` to read the rest.
+- **Field selection:** country and block routes accept `fields=code,name,...` to return only
+  those top-level fields (useful for `/blocks`, whose full rows are large).
+- **Search:** `{"results": [...], "count": n, "query": "..."}`.
+- **Errors:** `{"error": "...", "status_code": n, "path": "..."}`. Invalid input gives `400`/`422`,
+  unknown IDs `404`; server errors give a generic, logged `500`.
+- **Retired IDs:** a merged or renamed block id or country code answers `301` with a `Location` to
+  its replacement (e.g. `/blocks/USAN` → `/blocks/UNASUR`, `/countries/code/KV` →
+  `/countries/code/XK`); a retired one answers `410`. If an id now names a different organization
+  than it used to, `X-Internacia-Disambiguated` gives the id the old one moved to. This needs an
+  internacia-db release with alias tables inside `internacia.duckdb` (after 3.0.0).
+- **Open enums:** `status`, `geographic_scope`, `scope_category` and similar fields are open
+  strings; new data releases may add values.
 
 ### Service
 
@@ -127,11 +137,12 @@ new internacia-db releases may add values, so clients should accept unknown ones
 
 | Path | Description |
 |---|---|
-| `/countries?limit=` | All countries (optional `limit`) |
+| `/countries` | All countries and territories |
 | `/countries/count` | Number of countries |
 | `/countries/code/{alpha2}` | By ISO 3166-1 alpha-2 code, e.g. `US` |
 | `/countries/iso3/{alpha3}` | By ISO 3166-1 alpha-3 code, e.g. `USA` |
 | `/countries/numeric/{code}` | By ISO 3166-1 numeric code, e.g. `840` |
+| `/countries/{alpha2}/memberships?current=` | Membership edges of a country (`current=true` by default) |
 | `/countries/region/{id}` | By World Bank region ID, e.g. `ECS` |
 | `/countries/income-level/{id}` | By World Bank income level ID, e.g. `LMC` |
 | `/countries/un-members` | UN member states |
@@ -139,23 +150,28 @@ new internacia-db releases may add values, so clients should accept unknown ones
 | `/countries/continent/{name}` | By continent, e.g. `Europe` |
 | `/countries/currency/{code}` | Countries using a currency, e.g. `EUR` |
 | `/countries/language/{code}` | Countries using a language (ISO 639-3), e.g. `fra` |
-| `/countries/{code}`, `/countries/alpha2/{code}`, `/countries/alpha3/{code}` | Legacy aliases of the lookups above |
 
 ### International blocks
 
 | Path | Description |
 |---|---|
-| `/blocks?limit=` | All blocks (optional `limit`; the full list is ~11 MB) |
+| `/blocks` | All blocks |
 | `/blocks/count` | Number of blocks |
 | `/blocks/{id}` | By ID, e.g. `EU` (case-insensitive) |
-| `/blocks/type/{blocktype}` | By block type, e.g. `economic` |
+| `/blocks/{id}/members?current=` | Membership edges of a block (`current=true` by default) |
+| `/blocks/member/{alpha2}?current=` | Blocks that list a country; former memberships unless `current=true` |
+| `/blocks/type/{blocktype}` | By block type, e.g. `economic` (see `/blocktypes`) |
 | `/blocks/status/{status}` | By status, e.g. `formal` |
 | `/blocks/scope/{scope}` | By geographic scope, e.g. `regional` |
-| `/blocks/member/{alpha2}` | Blocks that list a country as a member, e.g. `FR` |
 | `/blocks/acronym/{acronym}` | By acronym, e.g. `NATO` |
 | `/blocks/tag/{tag}` | By tag, e.g. `trade` |
 | `/blocks/topic/{key}` | By topic key, e.g. `economy` |
 | `/blocks/founded/{year}` | By founding year, e.g. `1945` |
+| `/blocktypes`, `/blocktypes/{id}` | The block type taxonomy |
+
+"Current" memberships follow the internacia-db data contract: not `former_member`, no `left`
+date, and the block is neither historical nor dissolved. All participation statuses (member,
+observer, partner, …) are returned; filter `status` for full members.
 
 ### Search
 
@@ -165,24 +181,35 @@ new internacia-db releases may add values, so clients should accept unknown ones
 | `/search/countries?query=&limit=` | Countries only |
 | `/search/blocks?query=&limit=` | Blocks only |
 
-### Derived catalogs
+### Catalogs
 
 | Path | Description |
 |---|---|
-| `/currencies`, `/currencies/{code}` | Currencies used by countries |
-| `/currencies/{code}/countries`, `/currencies/country/{alpha2}` | Countries per currency, currencies per country |
-| `/languages`, `/languages/{code}` | Languages used by countries |
-| `/languages/{code}/countries`, `/languages/country/{alpha2}` | Countries per language, languages per country |
-| `/regions`, `/regions/{id}` | World Bank regions |
-| `/regions/{id}/countries`, `/regions/country/{alpha2}` | Countries per region, region per country |
-| `/timezones`, `/timezones/country/{alpha2}`, `/timezones/{name}` | Placeholder: always empty / 404 for now |
+| `/currencies`, `/currencies/{code}`, `/currencies/country/{alpha2}` | Currencies, with the number of countries using each |
+| `/languages`, `/languages/{code}`, `/languages/country/{alpha2}` | Languages (ISO 639-3) |
+| `/regions`, `/regions/{id}`, `/regions/country/{alpha2}` | World Bank regions |
+| `/timezones`, `/timezones/{name}`, `/timezones/country/{alpha2}` | IANA time zones, e.g. `/timezones/Europe/Paris` |
+
+### Deprecated routes
+
+These still work and answer with `Deprecation: true` and a `Link` header naming the successor;
+they will be removed in a later release.
+
+| Deprecated | Use instead |
+|---|---|
+| `/countries/{code}`, `/countries/alpha2/{code}` | `/countries/code/{code}` |
+| `/countries/alpha3/{code}` | `/countries/iso3/{code}` |
+| `/currencies/{code}/countries` | `/countries/currency/{code}` |
+| `/languages/{code}/countries` | `/countries/language/{code}` |
+| `/regions/{id}/countries` | `/countries/region/{id}` |
 
 ## Examples
 
 ```bash
 curl http://localhost:8000/countries/code/US
 curl http://localhost:8000/blocks/EU
-curl http://localhost:8000/blocks/member/FR
+curl "http://localhost:8000/blocks/NATO/members"
+curl "http://localhost:8000/blocks?fields=id,name&limit=20"
 curl "http://localhost:8000/search?query=united&limit=10"
 curl "http://localhost:8000/search?query=union&include_countries=false"
 ```

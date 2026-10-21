@@ -1,273 +1,171 @@
-"""International block-related endpoints."""
+"""International block (intblock) endpoints."""
 
-from fastapi import APIRouter, HTTPException, Query
+from typing import Any
 
+from fastapi import APIRouter, Query, Request, Response
+
+from app.api import FieldsParam, Paging, not_found_or_moved, page, single
 from app.dependencies import InternaciaClientDep
-from app.models.responses import BlockResponse, ListResponse
-from app.utils import handle_sdk_error
+from app.models.responses import Count, Membership, Page, Record, Single
 
 router = APIRouter(prefix="/blocks", tags=["blocks"])
 
 
-@router.get("/count", response_model=dict)
-async def get_blocks_count(client: InternaciaClientDep):
-    """
-    Get the total number of international blocks.
-
-    Returns:
-        Total count of blocks
-    """
-    try:
-        count = client.intblocks.count()
-
-        return {"count": count}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "counting blocks") from e
+def _block(client: InternaciaClientDep, block_id: str, request: Request) -> Record:
+    block = client.intblocks.get_by_id(block_id)
+    if block is None:
+        raise not_found_or_moved(client.intblocks.resolve_id(block_id), request, "Block", block_id)
+    return dict(block)
 
 
-@router.get("/{block_id}", response_model=BlockResponse)
-async def get_block_by_id(
-    block_id: str,
-    client: InternaciaClientDep
+def _list(rows: list[Any], request: Request, paging: Paging, fields: str | None) -> dict:
+    return page([dict(r) for r in rows], request, paging, fields)
+
+
+@router.get("", response_model=Page[Record])
+def list_blocks(
+    client: InternaciaClientDep, request: Request, paging: Paging, fields: FieldsParam = None
 ):
-    """
-    Get an international block by its ID.
-
-    Args:
-        block_id: Block identifier (e.g., "EU", "UN", "NATO")
-
-    Returns:
-        Block data from internacia-db
-    """
-    try:
-        block = client.intblocks.get_by_id(block_id)
-
-        if block is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"International block '{block_id}' not found"
-            )
-
-        return BlockResponse(data=block)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving block") from e
+    """All international organizations and groups. Use `fields` to keep pages small."""
+    return _list(client.intblocks.get_all(), request, paging, fields)
 
 
-@router.get("", response_model=ListResponse)
-async def get_all_blocks(
-    client: InternaciaClientDep,
-    limit: int | None = Query(None, description="Maximum number of results", ge=1)
-):
-    """
-    Get all international blocks.
-
-    Args:
-        limit: Optional maximum number of results to return
-
-    Returns:
-        List of all international blocks from internacia-db
-    """
-    try:
-        blocks = client.intblocks.get_all(limit=limit)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "listing blocks") from e
+@router.get("/count", response_model=Count)
+def count_blocks(client: InternaciaClientDep):
+    """Number of blocks."""
+    return {"count": client.intblocks.count()}
 
 
-@router.get("/type/{blocktype}", response_model=ListResponse)
-async def get_blocks_by_type(
+@router.get("/type/{blocktype}", response_model=Page[Record])
+def list_blocks_by_type(
     blocktype: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get blocks by type.
-
-    Args:
-        blocktype: Block type (e.g., "economic", "political", "military")
-
-    Returns:
-        List of blocks of the specified type
-    """
-    try:
-        blocks = client.intblocks.get_by_blocktype(blocktype)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by type") from e
+    """Blocks with a block type (see `/blocktypes`)."""
+    return _list(client.intblocks.get_by_blocktype(blocktype), request, paging, fields)
 
 
-@router.get("/status/{status}", response_model=ListResponse)
-async def get_blocks_by_status(
+@router.get("/status/{status}", response_model=Page[Record])
+def list_blocks_by_status(
     status: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get blocks by status.
-
-    Args:
-        status: Status (e.g., "formal", "informal", "de-facto")
-
-    Returns:
-        List of blocks with the specified status
-    """
-    try:
-        blocks = client.intblocks.get_by_status(status)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by status") from e
+    """Blocks with a status (open enum, e.g. `formal`, `informal`, `historical`)."""
+    return _list(client.intblocks.get_by_status(status), request, paging, fields)
 
 
-@router.get("/scope/{scope}", response_model=ListResponse)
-async def get_blocks_by_geographic_scope(
+@router.get("/scope/{scope}", response_model=Page[Record])
+def list_blocks_by_scope(
     scope: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get blocks by geographic scope.
-
-    Args:
-        scope: Geographic scope (e.g., "global", "regional", "sub-regional")
-
-    Returns:
-        List of blocks with the specified geographic scope
-    """
-    try:
-        blocks = client.intblocks.get_by_geographic_scope(scope)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by geographic scope") from e
+    """Blocks with a geographic scope (open enum, e.g. `global`, `regional`)."""
+    return _list(client.intblocks.get_by_geographic_scope(scope), request, paging, fields)
 
 
-@router.get("/member/{country_code}", response_model=ListResponse)
-async def get_blocks_by_member(
+@router.get("/member/{country_code}", response_model=Page[Record])
+def list_blocks_by_member(
     country_code: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
+    current: bool = Query(False, description="Only blocks where the membership is current"),
 ):
-    """
-    Get blocks that include a specific country as a member.
-
-    Args:
-        country_code: Two-letter country code (e.g., "US", "FR", "DE")
-
-    Returns:
-        List of blocks that include the specified country
-    """
-    try:
-        blocks = client.intblocks.get_by_member(country_code)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by member") from e
+    """Blocks that list a country (alpha-2) in `includes`; former memberships unless `current`."""
+    rows = client.intblocks.get_by_member(country_code, current_only=current)
+    return _list(rows, request, paging, fields)
 
 
-@router.get("/acronym/{acronym}", response_model=ListResponse)
-async def get_blocks_by_acronym(
+@router.get("/acronym/{acronym}", response_model=Page[Record])
+def list_blocks_by_acronym(
     acronym: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get blocks by acronym.
-
-    Args:
-        acronym: Acronym (e.g., "EU", "UN", "NATO")
-
-    Returns:
-        List of blocks with the specified acronym
-    """
-    try:
-        blocks = client.intblocks.get_by_acronym(acronym)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by acronym") from e
+    """Blocks with an acronym in any language (e.g. `NATO`)."""
+    return _list(client.intblocks.get_by_acronym(acronym), request, paging, fields)
 
 
-@router.get("/tag/{tag}", response_model=ListResponse)
-async def get_blocks_by_tag(
+@router.get("/tag/{tag}", response_model=Page[Record])
+def list_blocks_by_tag(
     tag: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get blocks by tag.
-
-    Args:
-        tag: Tag keyword
-
-    Returns:
-        List of blocks with the specified tag
-    """
-    try:
-        blocks = client.intblocks.get_by_tag(tag)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by tag") from e
+    """Blocks with a tag (e.g. `trade`)."""
+    return _list(client.intblocks.get_by_tag(tag), request, paging, fields)
 
 
-@router.get("/topic/{topic_key}", response_model=ListResponse)
-async def get_blocks_by_topic(
+@router.get("/topic/{topic_key}", response_model=Page[Record])
+def list_blocks_by_topic(
     topic_key: str,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
 ):
-    """
-    Get blocks by topic key.
-
-    Args:
-        topic_key: Topic key (e.g., "economy", "political", "trade")
-
-    Returns:
-        List of blocks with the specified topic
-    """
-    try:
-        blocks = client.intblocks.get_by_topic(topic_key)
-
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by topic") from e
+    """Blocks with a topic key (e.g. `economy`)."""
+    return _list(client.intblocks.get_by_topic(topic_key), request, paging, fields)
 
 
-@router.get("/founded/{year}", response_model=ListResponse)
-async def get_blocks_by_founded_year(
+@router.get("/founded/{year}", response_model=Page[Record])
+def list_blocks_by_founded_year(
     year: int,
-    client: InternaciaClientDep
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    fields: FieldsParam = None,
+):
+    """Blocks founded in a year."""
+    return _list(client.intblocks.get_by_founded_year(year), request, paging, fields)
+
+
+@router.get("/{block_id}/members", response_model=Page[Membership])
+def list_block_members(
+    block_id: str,
+    client: InternaciaClientDep,
+    request: Request,
+    paging: Paging,
+    current: bool = Query(True, description="Only current memberships (see the data contract)"),
 ):
     """
-    Get blocks founded in a specific year.
-
-    Args:
-        year: Foundation year (e.g., 1993, 1945)
-
-    Returns:
-        List of blocks founded in the specified year
+    Membership edges of a block, ordered by country code. With `current=true` (default) former
+    members and edges with a `left` date are excluded; filter `status` for full members.
     """
-    try:
-        blocks = client.intblocks.get_by_founded_year(year)
+    block = _block(client, block_id, request)
+    rows = client.memberships.get_by_intblock(block["id"], current_only=current)
+    return page([dict(r) for r in rows], request, paging)
 
-        return ListResponse(items=blocks or [], count=len(blocks) if blocks else 0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving blocks by founded year") from e
+
+@router.get("/{block_id}", response_model=Single[Record])
+def get_block(
+    block_id: str,
+    client: InternaciaClientDep,
+    request: Request,
+    response: Response,
+    fields: FieldsParam = None,
+):
+    """
+    A block by id (case-insensitive). Merged or renamed ids redirect with 301 (e.g. `USAN` →
+    `UNASUR`); retired ids return 410. When the id now names a different organization than it
+    used to, `X-Internacia-Disambiguated` names the id the previous one moved to.
+    """
+    block = _block(client, block_id, request)
+    previous = client.intblocks.resolve_id(block_id).get("disambiguated")
+    if previous:
+        response.headers["X-Internacia-Disambiguated"] = previous
+    return single(block, fields)

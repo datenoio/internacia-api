@@ -1,89 +1,41 @@
-"""Timezone-related endpoints."""
+"""Time zone endpoints, from the internacia-db `country_timezones` view."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
+from app.api import Paging, page
 from app.dependencies import InternaciaClientDep
-from app.models.responses import ListResponse
-from app.utils import handle_sdk_error
+from app.models.responses import Page, Single, Timezone, TimezoneEntry
 
 router = APIRouter(prefix="/timezones", tags=["timezones"])
 
 
-@router.get("", response_model=ListResponse)
-async def list_timezones(client: InternaciaClientDep):
-    """
-    List all timezones.
-
-    Note: Timezone functionality is not currently available in the SDK.
-    This endpoint returns an empty list.
-
-    Returns:
-        List of all timezones (currently empty)
-    """
-    try:
-        # Timezones are not available in the SDK yet
-        return ListResponse(items=[], count=0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "listing timezones") from e
+@router.get("", response_model=Page[TimezoneEntry])
+def list_timezones(client: InternaciaClientDep, request: Request, paging: Paging):
+    """IANA time zones used by countries, with the number of countries using each."""
+    return page([dict(t) for t in client.countries.get_timezones()], request, paging)
 
 
-@router.get("/country/{country_code}", response_model=ListResponse)
-async def get_timezones_by_country(
-    country_code: str,
-    client: InternaciaClientDep
+@router.get("/country/{country_code}", response_model=Page[TimezoneEntry])
+def list_country_timezones(
+    country_code: str, client: InternaciaClientDep, request: Request, paging: Paging
 ):
-    """
-    Get timezones used in a specific country.
-
-    Note: Timezone functionality is not currently available in the SDK.
-    This endpoint returns an empty list.
-
-    Args:
-        country_code: Country code (e.g., 'US', 'GB', 'FR')
-
-    Returns:
-        List of timezones for the country (currently empty)
-    """
-    try:
-        # Timezones are not available in the SDK yet
-        # country_code is part of the API contract but not currently used
-        _ = country_code  # Suppress unused argument warning
-        return ListResponse(items=[], count=0)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving timezones by country") from e
+    """Time zones of one country, each with the number of countries using it."""
+    if client.countries.get_by_code(country_code) is None:
+        raise HTTPException(404, detail=f"Country with code '{country_code}' not found")
+    counts = {t["timezone"]: t["country_count"] for t in client.countries.get_timezones()}
+    rows = [
+        {"timezone": tz, "country_count": counts.get(tz, 1)}
+        for tz in client.countries.get_country_timezones(country_code)
+    ]
+    return page(rows, request, paging)
 
 
-@router.get("/{timezone_name:path}", response_model=dict)
-async def get_timezone(
-    timezone_name: str,
-    client: InternaciaClientDep
-):
-    """
-    Get timezone information by name.
-
-    Note: Timezone functionality is not currently available in the SDK.
-    This endpoint returns a 404 error.
-
-    Args:
-        timezone_name: Timezone name (e.g., 'America/New_York', 'Europe/London', 'Asia/Tokyo')
-
-    Returns:
-        Timezone data (currently not available)
-    """
-    try:
-        # Timezones are not available in the SDK yet
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                f"Timezone '{timezone_name}' not found. "
-                "Timezone functionality is not available in the SDK."
-            )
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise handle_sdk_error(e, "retrieving timezone") from e
+@router.get("/{timezone_name:path}", response_model=Single[Timezone])
+def get_timezone(timezone_name: str, client: InternaciaClientDep):
+    """One IANA time zone (e.g. `Europe/Paris`) with the countries that use it."""
+    countries = [c["code"] for c in client.countries.get_by_timezone(timezone_name)]
+    if not countries:
+        raise HTTPException(404, detail=f"Timezone '{timezone_name}' not found")
+    return {
+        "data": {"timezone": timezone_name, "country_count": len(countries), "countries": countries}
+    }
