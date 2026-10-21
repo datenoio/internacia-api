@@ -19,8 +19,8 @@ Self-hosted, read-only REST API for [internacia-db](https://github.com/datenoio/
 | 0.1.x | `>=0.3,<0.4` | 3.x |
 
 > **Temporary:** internacia 0.3.0 is not on PyPI yet. Until it is, `pyproject.toml` resolves the
-> SDK from the head branch of [datenoio/internacia-python#3](https://github.com/datenoio/internacia-python/pull/3)
-> via `[tool.uv.sources]`. This goes away once 0.3.0 is published.
+> SDK from git, pinned to the internacia-python `main` commit that contains 0.3.0
+> (`[tool.uv.sources]`). This goes away once 0.3.0 is published.
 
 ## Install
 
