@@ -403,7 +403,7 @@ wheels = [
 [[package]]
 name = "internacia"
 version = "0.3.0"
-source = { git = "https://github.com/datenoio/internacia-python?branch=cursor%2Fpy-0-3-packaging-release-61fa#d3cb862375788262b2a47dcf0f1097819c198869" }
+source = { git = "https://github.com/datenoio/internacia-python?rev=274d222b5bb8cffe215e8c5ebeb72eb9d7930bed#274d222b5bb8cffe215e8c5ebeb72eb9d7930bed" }
 dependencies = [
     { name = "duckdb" },
     { name = "requests" },
@@ -433,7 +433,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.150" },
-    { name = "internacia", git = "https://github.com/datenoio/internacia-python?branch=cursor%2Fpy-0-3-packaging-release-61fa" },
+    { name = "internacia", git = "https://github.com/datenoio/internacia-python?rev=274d222b5bb8cffe215e8c5ebeb72eb9d7930bed" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-dotenv", specifier = ">=1.2.2" },

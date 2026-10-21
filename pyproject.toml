@@ -34,10 +34,10 @@ dev = [
 package = false
 
 # TEMPORARY: internacia 0.3.0 is not on PyPI yet. Until it is, resolve the SDK from the
-# head of datenoio/internacia-python#3 (the full 0.3.0 stack). Delete this table and run
+# internacia-python main commit that merged the 0.3.0 stack. Delete this table and run
 # `uv lock --upgrade-package internacia` once 0.3.0 is published.
 [tool.uv.sources]
-internacia = { git = "https://github.com/datenoio/internacia-python", branch = "cursor/py-0-3-packaging-release-61fa" }
+internacia = { git = "https://github.com/datenoio/internacia-python", rev = "274d222b5bb8cffe215e8c5ebeb72eb9d7930bed" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
