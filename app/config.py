@@ -17,18 +17,15 @@ class Settings(BaseSettings):
 
     # API Settings
     api_title: str = "Internacia API"
-    api_version: str = "1.0.0"
-    api_description: str = "REST API for internacia-db using internacia-python SDK"
+    api_version: str = "0.1.0"
+    api_description: str = "REST API for internacia-db using the internacia Python SDK"
 
     # Server Settings
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = False
 
-    # SDK Configuration
-    # Add any SDK-specific configuration here
-    # For example, database connection strings, API keys, etc.
-    internacia_db_url: Optional[str] = None
+    # Path to internacia.duckdb; when unset the SDK falls back to its download cache
     internacia_db_path: Optional[str] = None
 
 
