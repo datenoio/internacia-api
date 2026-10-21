@@ -60,6 +60,10 @@ cp .env.example .env
 | `HOST` | `0.0.0.0` | Bind address for `python -m app.main` |
 | `PORT` | `8000` | Port for `python -m app.main` |
 | `DEBUG` | `False` | Auto-reload for `python -m app.main` |
+| `CORS_ORIGINS` | `["*"]` | JSON list of allowed CORS origins; credentials are never allowed |
+
+The server opens the database at startup. If it cannot (missing file, wrong path, not an
+internacia-db file), it logs the reason and exits instead of serving errors.
 
 ## Run
 
@@ -75,14 +79,18 @@ Interactive docs: http://localhost:8000/docs (Swagger UI) and http://localhost:8
 
 All endpoints are `GET`. Single records are returned as `{"data": {...}}`, lists as
 `{"items": [...], "count": n}`, search as `{"results": [...], "count": n, "query": "..."}`, and
-errors as `{"error": "...", "status_code": n, "path": "..."}`.
+errors as `{"error": "...", "status_code": n, "path": "..."}`. Invalid input gives `400`/`422`,
+unknown IDs `404`; server errors give a generic `500` message and are logged.
+
+Enum-like fields such as `status`, `geographic_scope` and `scope_category` are open strings:
+new internacia-db releases may add values, so clients should accept unknown ones.
 
 ### Service
 
 | Path | Description |
 |---|---|
 | `/` | API name, version and docs links |
-| `/health` | Health status |
+| `/health` | Runs a query against the database: `200` when it succeeds, `503` otherwise |
 
 ### Countries
 
@@ -152,8 +160,23 @@ curl "http://localhost:8000/search?query=union&include_countries=false"
 
 ```bash
 uv sync
+uv run ruff check
 uv run pytest
 ```
+
+`pytest` runs the unit tests (SDK mocked) and, when `INTERNACIA_TEST_DB_PATH` is set, a smoke test
+that calls every route against a real database:
+
+```bash
+uv run python scripts/fetch_test_db.py --version 3.0.0 \
+  --sha256 02c33d6822432ef60bce19b81e33b180221f6d6504c3e163f0e14f866254e01d \
+  --output .test-data/internacia.duckdb
+INTERNACIA_TEST_DB_PATH=.test-data/internacia.duckdb uv run pytest
+```
+
+CI (`.github/workflows/ci.yml`) runs ruff, the unit tests and the smoke test on Python 3.11 and
+3.13, then checks that the server starts with the database and refuses to start without it. The
+tested internacia-db release is pinned there (`TESTED_DB_VERSION`, `TESTED_DB_SHA256`).
 
 ## License
 
