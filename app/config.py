@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # Path to internacia.duckdb; when unset the SDK falls back to its download cache
     internacia_db_path: str | None = None
 
+    # Expected internacia-db version (e.g. "3.0.0"); startup fails if the database differs.
+    # The Docker image sets it to the version it bakes in.
+    internacia_db_version: str | None = None
+
+    # Cache-Control max-age for successful responses, in seconds (0 disables caching headers)
+    cache_max_age: int = 3600
+
 
 # Global settings instance
 settings = Settings()

@@ -1,0 +1,90 @@
+name: Docker
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/datenoio/internacia-api
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read API and data versions
+        id: versions
+        run: |
+          api=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          db=$(sed -n 's/^ARG INTERNACIA_DB_VERSION=//p' Dockerfile)
+          echo "api=$api" >> "$GITHUB_OUTPUT"
+          echo "db=$db" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF_NAME" != "v$api" ]]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match pyproject version $api"
+            exit 1
+          fi
+
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build the image for testing (amd64)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: internacia-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        run: |
+          docker run -d --name api --read-only --tmpfs /tmp -p 8000:8000 internacia-api:ci
+          for _ in $(seq 30); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' api)" = healthy ] && break
+            sleep 2
+          done
+          docker inspect -f '{{.State.Health.Status}}' api | grep -qx healthy
+          curl -fsS http://127.0.0.1:8000/meta | python3 -c 'import json,sys; m=json.load(sys.stdin)["data"]; assert m["version"] == "${{ steps.versions.outputs.db }}", m'
+          etag=$(curl -fsS -D - -o /dev/null http://127.0.0.1:8000/blocks/EU | awk -F': ' 'tolower($1)=="etag"{print $2}' | tr -d '\r')
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H "If-None-Match: $etag" http://127.0.0.1:8000/blocks/EU)" = 304
+          test "$(docker exec api id -u)" = 10001
+          docker rm -f api
+
+      - name: Log in to GHCR
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image tags
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=${{ steps.versions.outputs.api }}-db-${{ steps.versions.outputs.db }}
+            type=raw,value=db-${{ steps.versions.outputs.db }}
+            type=raw,value=${{ steps.versions.outputs.api }}
+            type=raw,value=latest
+
+      - name: Build and push (amd64, arm64)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
