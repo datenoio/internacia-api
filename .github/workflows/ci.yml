@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # internacia-db release the smoke tests run against. Bump both together, and update the
+  # expected counts in tests/smoke/test_real_db.py if they change.
+  TESTED_DB_VERSION: "3.0.0"
+  TESTED_DB_SHA256: "02c33d6822432ef60bce19b81e33b180221f6d6504c3e163f0e14f866254e01d"
+
+# `uv sync --locked` installs the internacia SDK from git (see [tool.uv.sources] in
+# pyproject.toml) until 0.3.0 is on PyPI.
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check
+
+  test:
+    name: test / py${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    env:
+      DB_FILE: ${{ github.workspace }}/.test-data/internacia.duckdb
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - run: uv sync --locked
+
+      - name: Cache test database
+        uses: actions/cache@v6
+        with:
+          path: .test-data
+          key: internacia-db-${{ env.TESTED_DB_VERSION }}-${{ env.TESTED_DB_SHA256 }}
+
+      - name: Fetch internacia-db ${{ env.TESTED_DB_VERSION }}
+        run: >-
+          uv run python scripts/fetch_test_db.py
+          --version "$TESTED_DB_VERSION"
+          --sha256 "$TESTED_DB_SHA256"
+          --output "$DB_FILE"
+
+      - name: Unit and smoke tests
+        env:
+          INTERNACIA_TEST_DB_PATH: ${{ env.DB_FILE }}
+        run: uv run pytest
+
+      - name: Server starts and /health returns 200
+        env:
+          INTERNACIA_DB_PATH: ${{ env.DB_FILE }}
+        run: |
+          uv run uvicorn app.main:app --port 8000 &
+          for _ in $(seq 30); do
+            curl -fsS http://127.0.0.1:8000/health && exit 0
+            sleep 1
+          done
+          echo "::error::server did not become healthy"
+          exit 1
+
+      - name: Server refuses to start without a database
+        env:
+          INTERNACIA_DB_PATH: /nonexistent/internacia.duckdb
+        run: |
+          set +e
+          timeout 60 uv run uvicorn app.main:app --port 8001
+          status=$?
+          set -e
+          # uvicorn exits with 3 when the lifespan startup hook fails
+          if [ "$status" -ne 3 ]; then
+            echo "::error::expected startup failure (exit 3), got exit $status"
+            exit 1
+          fi

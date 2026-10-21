@@ -1,54 +1,41 @@
 """FastAPI dependencies for dependency injection."""
 
-from functools import lru_cache
-from typing import Annotated, Optional
+import logging
 from pathlib import Path
-from fastapi import Depends
+from typing import Annotated
 
-try:
-    from internacia import InternaciaClient
-    SDK_AVAILABLE = True
-except ImportError:
-    # Fallback if import fails - will be caught at runtime
-    InternaciaClient = None
-    SDK_AVAILABLE = False
+from fastapi import Depends, Request
+from internacia import InternaciaClient
 
 from app.config import settings
 
-
-class StubClient:
-    """Stub client used when SDK is not available."""
+logger = logging.getLogger(__name__)
 
 
-@lru_cache()
-def get_internacia_client():
+def create_client() -> InternaciaClient:
     """
-    Create and return a singleton InternaciaClient instance.
+    Open the internacia-db database and check that it can be queried.
 
-    Uses LRU cache to ensure only one instance is created.
-    Returns a stub client if SDK is not available.
-
-    The SDK accepts db_path as a Path object (not a string).
+    Called once at application startup. Any failure is logged and re-raised so the
+    server refuses to start instead of serving errors.
     """
-    if not SDK_AVAILABLE or InternaciaClient is None:
-        # Return a stub client instead of raising an error
-        # This allows the API to run and return proper 501 errors
-        return StubClient()
-
-    # Initialize client with configuration from settings
-    # SDK expects db_path as Path, not url or path strings
+    db_path = Path(settings.internacia_db_path) if settings.internacia_db_path else None
     try:
-        if settings.internacia_db_path:
-            db_path = Path(settings.internacia_db_path)
-            return InternaciaClient(db_path=db_path)
-        # Use default initialization (will look for database in default locations)
-        return InternaciaClient()
-    except Exception:  # pylint: disable=broad-exception-caught
-        # If client creation fails, return stub
-        # We catch all exceptions here to gracefully fall back to stub client
-        return StubClient()
+        client = InternaciaClient(db_path=db_path)
+        client.countries.count()
+    except Exception:
+        logger.critical(
+            "Cannot open internacia-db (INTERNACIA_DB_PATH=%s); refusing to start",
+            settings.internacia_db_path or "<unset, using SDK cache>",
+            exc_info=True,
+        )
+        raise
+    return client
 
 
-# Dependency annotation for use in route handlers
-# Use Optional type to handle stub client case
-InternaciaClientDep = Annotated[Optional[object], Depends(get_internacia_client)]
+def get_internacia_client(request: Request) -> InternaciaClient:
+    """Return the client created at startup."""
+    return request.app.state.client
+
+
+InternaciaClientDep = Annotated[InternaciaClient, Depends(get_internacia_client)]

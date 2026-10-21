@@ -1,20 +1,12 @@
 """Timezone-related endpoints."""
 
 from fastapi import APIRouter, HTTPException
-from app.dependencies import InternaciaClientDep, StubClient
-from app.utils import handle_sdk_error
+
+from app.dependencies import InternaciaClientDep
 from app.models.responses import ListResponse
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/timezones", tags=["timezones"])
-
-
-def _check_client(client):
-    """Check if client is available."""
-    if isinstance(client, StubClient):
-        raise HTTPException(
-            status_code=501,
-            detail="SDK not available"
-        )
 
 
 @router.get("", response_model=ListResponse)
@@ -29,7 +21,6 @@ async def list_timezones(client: InternaciaClientDep):
         List of all timezones (currently empty)
     """
     try:
-        _check_client(client)
         # Timezones are not available in the SDK yet
         return ListResponse(items=[], count=0)
     except HTTPException:
@@ -56,7 +47,6 @@ async def get_timezones_by_country(
         List of timezones for the country (currently empty)
     """
     try:
-        _check_client(client)
         # Timezones are not available in the SDK yet
         # country_code is part of the API contract but not currently used
         _ = country_code  # Suppress unused argument warning
@@ -85,7 +75,6 @@ async def get_timezone(
         Timezone data (currently not available)
     """
     try:
-        _check_client(client)
         # Timezones are not available in the SDK yet
         raise HTTPException(
             status_code=404,

@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 def test_root_endpoint(client: TestClient):
     """Test the root endpoint returns API information."""
     response = client.get("/")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "name" in data
@@ -21,7 +21,7 @@ def test_root_endpoint(client: TestClient):
 def test_root_endpoint_structure(client: TestClient):
     """Test root endpoint returns correct structure."""
     response = client.get("/")
-    
+
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data["name"], str)

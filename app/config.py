@@ -1,7 +1,5 @@
 """Application configuration settings."""
 
-from typing import Optional
-
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
@@ -25,8 +23,11 @@ class Settings(BaseSettings):
     port: int = 8000
     debug: bool = False
 
+    # Allowed CORS origins, e.g. CORS_ORIGINS='["https://example.org"]'
+    cors_origins: list[str] = ["*"]
+
     # Path to internacia.duckdb; when unset the SDK falls back to its download cache
-    internacia_db_path: Optional[str] = None
+    internacia_db_path: str | None = None
 
 
 # Global settings instance

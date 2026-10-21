@@ -1,20 +1,12 @@
 """Region-related endpoints."""
 
 from fastapi import APIRouter, HTTPException
-from app.dependencies import InternaciaClientDep, StubClient
-from app.utils import handle_sdk_error
+
+from app.dependencies import InternaciaClientDep
 from app.models.responses import ListResponse
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/regions", tags=["regions"])
-
-
-def _check_client(client):
-    """Check if client is available."""
-    if isinstance(client, StubClient):
-        raise HTTPException(
-            status_code=501,
-            detail="SDK not available"
-        )
 
 
 @router.get("/{region_id}/countries", response_model=ListResponse)
@@ -32,7 +24,6 @@ async def get_countries_by_region(
         List of countries in the specified region
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_region(region_id)
 
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
@@ -51,7 +42,6 @@ async def list_regions(client: InternaciaClientDep):
         List of all unique regions
     """
     try:
-        _check_client(client)
         all_countries = client.countries.get_all()
 
         # Extract unique regions
@@ -87,7 +77,6 @@ async def get_region_by_country(
         Region data for the country
     """
     try:
-        _check_client(client)
         country = client.countries.get_by_code(country_code)
 
         if country is None:
@@ -125,7 +114,6 @@ async def get_region(
         Region data from internacia-db
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_region(region_id)
 
         if not countries:

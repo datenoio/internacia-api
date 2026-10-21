@@ -1,39 +1,36 @@
 """Health check endpoints."""
 
+import logging
+
 from fastapi import APIRouter
-from app.dependencies import InternaciaClientDep, StubClient
-from app.models.responses import HealthResponse
+from fastapi.responses import JSONResponse
+
 from app.config import settings
+from app.dependencies import InternaciaClientDep
+from app.models.responses import HealthResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/health", tags=["health"])
 
 
-@router.get("", response_model=HealthResponse)
-async def health_check(client: InternaciaClientDep):
+@router.get(
+    "",
+    response_model=HealthResponse,
+    responses={503: {"model": HealthResponse, "description": "Database is not readable"}},
+)
+def health_check(client: InternaciaClientDep):
     """
     Health check endpoint.
 
-    Returns the health status of the API and SDK connection.
+    Runs a query against the database. Returns 200 when it succeeds and 503 otherwise,
+    so it can be used as a readiness probe.
     """
-    # Check if we have a stub client (SDK not available)
-    if isinstance(client, StubClient):
-        sdk_connected = False
-    else:
-        try:
-            # Try to perform a simple operation to check health
-            if hasattr(client, 'health_check'):
-                sdk_connected = client.health_check()
-            elif hasattr(client, 'ping'):
-                sdk_connected = client.ping()
-            else:
-                # If no health check method, assume healthy if client exists
-                sdk_connected = client is not None
-        except Exception:  # pylint: disable=broad-exception-caught
-            # Catch all exceptions for health check to gracefully degrade
-            sdk_connected = False
+    try:
+        client.countries.count()
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.exception("Health check failed")
+        body = HealthResponse(status="unhealthy", sdk_connected=False, version=settings.api_version)
+        return JSONResponse(status_code=503, content=body.model_dump())
 
-    return HealthResponse(
-        status="healthy" if sdk_connected else "degraded",
-        sdk_connected=sdk_connected,
-        version=settings.api_version
-    )
+    return HealthResponse(status="healthy", sdk_connected=True, version=settings.api_version)

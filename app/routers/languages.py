@@ -1,20 +1,12 @@
 """Language-related endpoints."""
 
 from fastapi import APIRouter, HTTPException
-from app.dependencies import InternaciaClientDep, StubClient
-from app.utils import handle_sdk_error
+
+from app.dependencies import InternaciaClientDep
 from app.models.responses import ListResponse
+from app.utils import handle_sdk_error
 
 router = APIRouter(prefix="/languages", tags=["languages"])
-
-
-def _check_client(client):
-    """Check if client is available."""
-    if isinstance(client, StubClient):
-        raise HTTPException(
-            status_code=501,
-            detail="SDK not available"
-        )
 
 
 @router.get("/{language_code}/countries", response_model=ListResponse)
@@ -32,7 +24,6 @@ async def get_countries_by_language(
         List of countries where the language is spoken
     """
     try:
-        _check_client(client)
         countries = client.countries.get_by_language(language_code)
 
         return ListResponse(items=countries or [], count=len(countries) if countries else 0)
@@ -51,13 +42,12 @@ async def list_languages(client: InternaciaClientDep):
         List of all unique languages
     """
     try:
-        _check_client(client)
         all_countries = client.countries.get_all()
 
         # Extract unique languages
         languages_map = {}
         for country in all_countries or []:
-            for language in country.get("languages", []):
+            for language in country.get("languages") or []:
                 code = language.get("code")
                 if code and code not in languages_map:
                     languages_map[code] = language
@@ -86,7 +76,6 @@ async def get_languages_by_country(
         List of languages for the country
     """
     try:
-        _check_client(client)
         country = client.countries.get_by_code(country_code)
 
         if country is None:
@@ -95,7 +84,7 @@ async def get_languages_by_country(
                 detail=f"Country with code '{country_code}' not found"
             )
 
-        languages = country.get("languages", [])
+        languages = country.get("languages") or []
 
         return ListResponse(items=languages, count=len(languages))
     except HTTPException:
@@ -119,12 +108,11 @@ async def get_language(
         Language data from internacia-db
     """
     try:
-        _check_client(client)
         all_countries = client.countries.get_all()
 
         # Find language in any country
         for country in all_countries or []:
-            for language in country.get("languages", []):
+            for language in country.get("languages") or []:
                 if language.get("code") == language_code:
                     return {"data": language}
 

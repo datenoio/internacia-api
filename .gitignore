@@ -209,3 +209,4 @@ __marimo__/
 # internacia-db files downloaded for local runs and tests
 *.duckdb
 *.duckdb.wal
+.test-data/

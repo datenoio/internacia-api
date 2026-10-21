@@ -22,6 +22,22 @@ First installable release. Targets internacia-db 3.x through the `internacia` SD
 
 ### Added
 - `.env.example`.
+- CI: ruff, unit tests and a smoke test of every route against the internacia-db 3.0.0 release
+  DuckDB (sha256-verified), on Python 3.11 and 3.13, plus server start/refuse-to-start checks.
+- `CORS_ORIGINS` setting.
+
+### Fixed
+- `/currencies` and `/languages` (and the per-country and per-code variants) returned 500 when a
+  country's `currencies`/`languages` column is NULL.
+- `/search` option parameters are `include_countries`/`include_blocks`; the tests used other names.
+- If the database could not be opened, the API silently served 501 from a cached stub client.
+  It now logs the reason and refuses to start.
+- `/health` always returned 200. It now queries the database and returns 503 on failure.
+- Server errors returned raw exception text (including SQL) and some were reported as 400.
+  SDK validation errors are 400, not-found errors 404, everything else a generic, logged 500.
+- CORS allowed credentials with a wildcard origin. Credentials are now disabled.
 
 ### Removed
 - Unused `INTERNACIA_DB_URL` setting.
+- The numpy conversion shim; SDK 0.3 returns plain Python types.
+- The `StubClient` fallback and the eight copied `_check_client` helpers.
