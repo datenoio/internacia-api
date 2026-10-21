@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from internacia import InternaciaError
 
 from app.caching import EXPOSED_HEADERS, DataVersionMiddleware, data_identity
+from app.catalog import CachedClient
 from app.config import settings
 from app.dependencies import create_client
 from app.routers import (
@@ -33,7 +34,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Open the database before serving; startup fails if it cannot be opened."""
-    app.state.client = create_client()
+    client = create_client()
+    app.state.client = CachedClient(client) if settings.preload_catalogs else client
     app.state.data_identity = data_identity(app.state.client.meta())
     yield
 

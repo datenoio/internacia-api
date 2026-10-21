@@ -22,6 +22,10 @@ API for the internacia-db 3.x model. **Breaking:** list responses are paginated.
 - `fields=` on country and block routes.
 - Typed response models for pages, memberships, block types and catalogs in the OpenAPI schema.
 - `Deprecation` and `Link` headers on the deprecated duplicate routes.
+- The full country and block lists, block types and catalogs are loaded into memory at startup
+  (`PRELOAD_CATALOGS`, on by default): `GET /blocks` and `GET /countries` are 5–6 times faster.
+- `docs/self-hosting.md`: reverse proxy (nginx, Caddy, Traefik), forwarded headers, compression,
+  rate limiting and sizing.
 
 ### Changed
 - **Breaking:** lists return one page with `total`, `limit` (default 100, max 1000), `offset`

@@ -35,10 +35,10 @@ package = false
 
 # TEMPORARY: the SDK features this API uses (contract check, meta(), memberships, aliases,
 # catalogs; internacia 0.4.0) are not on PyPI yet. Until they are, resolve the SDK from the
-# head of the internacia-python py-1.3 branch (stacked on py-1.1/py-1.2). Once 0.4.0 is
+# head of the internacia-python py-3.1 branch (stacked on py-1.1 to py-1.3). Once 0.4.0 is
 # published, delete this table and run `uv lock --upgrade-package internacia`.
 [tool.uv.sources]
-internacia = { git = "https://github.com/datenoio/internacia-python", rev = "61b47f2e5a6b23b29751ea93af7f02c3f7030f82" }
+internacia = { git = "https://github.com/datenoio/internacia-python", rev = "4cf9592be5278144f890087c1e164c8a186a0c38" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

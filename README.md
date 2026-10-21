@@ -86,6 +86,7 @@ cp .env.example .env
 | `CORS_ORIGINS` | `["*"]` | JSON list of allowed CORS origins; credentials are never allowed |
 | `INTERNACIA_DB_VERSION` | unset | Expected internacia-db version; startup fails if the database differs |
 | `CACHE_MAX_AGE` | `3600` | `Cache-Control: max-age` for successful responses (`0` turns it off) |
+| `PRELOAD_CATALOGS` | `true` | Load the full lists and catalogs into memory at startup (about 80 MB) |
 
 The server opens the database at startup and checks its data contract (the internacia SDK
 refuses an unsupported contract major). If anything fails (missing file, wrong path, not an
@@ -104,6 +105,9 @@ uv run python -m app.main
 ```
 
 Interactive docs: http://localhost:8000/docs (Swagger UI) and http://localhost:8000/redoc.
+
+For production (reverse proxy, forwarded headers, compression, rate limiting, memory), see
+[docs/self-hosting.md](docs/self-hosting.md).
 
 ## Endpoints
 
