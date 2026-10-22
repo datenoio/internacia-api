@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - Unreleased
+## [0.2.1] - 2026-10-22
+
+### Data
+
+- Serves internacia-db 3.1.0 (image `0.2.1-db-3.1.0`).
+
+## [0.2.0] - 2026-10-22
 
 API for the internacia-db 3.x model. **Breaking:** list responses are paginated.
 
