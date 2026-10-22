@@ -226,6 +226,7 @@ uv run pytest
 that calls every route against a real database:
 
 ```bash
+# version and SHA-256: ARG INTERNACIA_DB_VERSION / INTERNACIA_DB_SHA256 in the Dockerfile
 uv run python scripts/fetch_test_db.py --version 3.0.0 \
   --sha256 02c33d6822432ef60bce19b81e33b180221f6d6504c3e163f0e14f866254e01d \
   --output .test-data/internacia.duckdb
@@ -234,7 +235,25 @@ INTERNACIA_TEST_DB_PATH=.test-data/internacia.duckdb uv run pytest
 
 CI (`.github/workflows/ci.yml`) runs ruff, the unit tests and the smoke test on Python 3.11 and
 3.13, then checks that the server starts with the database and refuses to start without it. The
-tested internacia-db release is pinned there (`TESTED_DB_VERSION`, `TESTED_DB_SHA256`).
+smoke test uses the internacia-db release the Docker image bakes in (`INTERNACIA_DB_VERSION` and
+`INTERNACIA_DB_SHA256` in the `Dockerfile`) and takes its expected counts from that file, so it
+passes against any 3.x release.
+
+### Following internacia-db releases
+
+`.github/workflows/data-bump.yml` runs daily and when internacia-db announces a release. Its
+`scripts/data_bump.py` moves the Dockerfile to the new release and records it in the CHANGELOG,
+then opens a pull request that merges itself once CI passes, unless the contract major changed.
+If no other changes are waiting to be released, the same pull request bumps the API patch
+version; merging it tags `vX.Y.Z` (`release-tag.yml`) and `docker.yml` publishes
+`<api>-db-<db>`. Otherwise the new data ships with the next release.
+
+Maintainer setup: the internacia-bot GitHub App on this repository with its secrets
+(`INTERNACIA_BOT_CLIENT_ID`, `INTERNACIA_BOT_PRIVATE_KEY`), "Allow auto-merge" in the repository
+settings, and branch protection on `main` that requires the `lint`, `test / py3.11`,
+`test / py3.13` and `image` checks.
+Dependabot (`.github/dependabot.yml`) proposes weekly updates for Python packages, GitHub Actions
+and the Docker base images.
 
 ## License
 

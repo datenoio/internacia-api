@@ -1,0 +1,92 @@
+name: internacia-db data bump
+
+# Opens a pull request that moves the Docker image and the smoke tests to a new internacia-db
+# release, and merges it automatically when CI passes and the contract major is unchanged.
+# If nothing else is waiting to be released, the PR also bumps the API patch version, so the
+# merge is tagged (release-tag.yml) and docker.yml publishes <api>-db-<db>.
+#
+# internacia-db's release.yml sends the dispatch; the daily schedule catches anything missed.
+# Needs the internacia-bot GitHub App (INTERNACIA_BOT_CLIENT_ID / INTERNACIA_BOT_PRIVATE_KEY,
+# Contents and Pull requests write): pull requests opened with GITHUB_TOKEN do not run CI.
+# Auto-merge also needs "Allow auto-merge" and branch protection on main requiring the checks.
+
+on:
+  schedule:
+    - cron: '45 6 * * *'
+  repository_dispatch:
+    types: [internacia-db-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: internacia-db release (blank = latest)
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-bump
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - run: uv sync --locked --no-dev
+
+      - name: Check for a newer internacia-db release
+        id: bump
+        env:
+          VERSION: ${{ github.event.client_payload.version || inputs.version }}
+        run: uv run --no-dev python scripts/data_bump.py ${VERSION:+--version "$VERSION"} --pr-body data-bump.md
+
+      - name: Check bot app secrets
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          CLIENT_ID: ${{ secrets.INTERNACIA_BOT_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.INTERNACIA_BOT_PRIVATE_KEY }}
+        run: |
+          if [ -z "$CLIENT_ID" ] || [ -z "$PRIVATE_KEY" ]; then
+            echo "::error::INTERNACIA_BOT_CLIENT_ID / INTERNACIA_BOT_PRIVATE_KEY are not set; cannot open the data-bump PR for internacia-db ${{ steps.bump.outputs.version }}."
+            exit 1
+          fi
+
+      - name: Mint bot app token
+        id: app-token
+        if: steps.bump.outputs.changed == 'true'
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.INTERNACIA_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.INTERNACIA_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open the data-bump PR
+        id: cpr
+        if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: data-bump/internacia-db
+          commit-message: "data: internacia-db ${{ steps.bump.outputs.version }}"
+          title: "Serve internacia-db ${{ steps.bump.outputs.version }}"
+          labels: data-bump
+          body-path: data-bump.md
+          add-paths: |
+            Dockerfile
+            CHANGELOG.md
+            pyproject.toml
+            uv.lock
+            app/config.py
+
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-number && steps.bump.outputs.auto_merge == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR: ${{ steps.cpr.outputs.pull-request-number }}
+        run: gh pr merge "$PR" --auto --squash --repo "$GITHUB_REPOSITORY"
