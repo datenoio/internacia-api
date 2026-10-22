@@ -173,3 +173,14 @@ def test_route_error(api: TestClient, path: str, status: int) -> None:
     response = api.get(path)
     assert response.status_code == status, response.text[:500]
     assert "Error:" not in response.text
+
+
+def test_meta_and_cache_headers(api: TestClient) -> None:
+    meta = api.get("/meta").json()["data"]
+    assert meta["version"].startswith("3.")
+    assert meta["contract_version"].startswith("3.")
+    assert meta["datasets"]["countries"]["row_count"] == 256
+    response = api.get("/blocks/EU")
+    assert response.headers["X-Internacia-Version"] == meta["version"]
+    cached = api.get("/blocks/EU", headers={"If-None-Match": response.headers["ETag"]})
+    assert cached.status_code == 304

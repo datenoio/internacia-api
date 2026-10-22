@@ -4,9 +4,9 @@ Self-hosted, read-only REST API for [internacia-db](https://github.com/datenoio/
 (countries and international organizations), built with FastAPI on top of the
 [`internacia`](https://github.com/datenoio/internacia-python) Python SDK.
 
-> **Status: pre-release (0.1.0 in progress).** There is no hosted instance and no Docker image yet;
-> you run it yourself against a local copy of the database. Response bodies are the raw
-> internacia-db rows, so their fields follow the database schema of the file you load.
+> **Status: pre-release.** There is no hosted instance; you run it yourself, from source or from
+> the Docker image (published to GHCR on release tags). Response bodies are the raw internacia-db
+> rows, so their fields follow the database schema of the file you load.
 
 ## Requirements
 
@@ -16,11 +16,30 @@ Self-hosted, read-only REST API for [internacia-db](https://github.com/datenoio/
 
 | internacia-api | internacia SDK | internacia-db |
 |---|---|---|
+| main | `>=0.4,<0.5` | 3.x (contract 3.x) |
 | 0.1.x | `>=0.3,<0.4` | 3.x |
 
-> **Temporary:** internacia 0.3.0 is not on PyPI yet. Until it is, `pyproject.toml` resolves the
-> SDK from git, pinned to the internacia-python `main` commit that contains 0.3.0
-> (`[tool.uv.sources]`). This goes away once 0.3.0 is published.
+## Docker
+
+```bash
+docker run -p 8000:8000 ghcr.io/datenoio/internacia-api:latest
+# or, from a checkout
+docker compose up --build
+```
+
+The image bakes in one internacia-db release (`internacia.duckdb`, checked against its SHA-256 at
+build time; see `INTERNACIA_DB_VERSION` / `INTERNACIA_DB_SHA256` in the `Dockerfile`), runs as a
+non-root user, works with a read-only root filesystem, and has a `/health` health check. Tags:
+`<api>-db-<db>` (e.g. `0.2.0-db-3.0.0`), `db-<db>`, `<api>` and `latest`, for `linux/amd64` and
+`linux/arm64`.
+
+To serve another database, mount it over `/data/internacia.duckdb` and set
+`INTERNACIA_DB_VERSION` to its version (or to an empty string to skip the version check):
+
+```bash
+docker run -p 8000:8000 -v "$PWD/internacia.duckdb:/data/internacia.duckdb:ro" \
+  -e INTERNACIA_DB_VERSION=3.1.0 ghcr.io/datenoio/internacia-api:latest
+```
 
 ## Install
 
@@ -61,9 +80,16 @@ cp .env.example .env
 | `PORT` | `8000` | Port for `python -m app.main` |
 | `DEBUG` | `False` | Auto-reload for `python -m app.main` |
 | `CORS_ORIGINS` | `["*"]` | JSON list of allowed CORS origins; credentials are never allowed |
+| `INTERNACIA_DB_VERSION` | unset | Expected internacia-db version; startup fails if the database differs |
+| `CACHE_MAX_AGE` | `3600` | `Cache-Control: max-age` for successful responses (`0` turns it off) |
 
-The server opens the database at startup. If it cannot (missing file, wrong path, not an
-internacia-db file), it logs the reason and exits instead of serving errors.
+The server opens the database at startup and checks its data contract (the internacia SDK
+refuses an unsupported contract major). If anything fails (missing file, wrong path, not an
+internacia-db file, unexpected version), it logs the reason and exits instead of serving errors.
+
+Every response carries `X-Internacia-Version` and `X-Internacia-Contract`. Successful `GET`
+responses also carry a weak `ETag` (derived from the request URL, the API version and the data
+build) and `Cache-Control`; send `If-None-Match` to get `304 Not Modified`.
 
 ## Run
 
@@ -91,6 +117,7 @@ new internacia-db releases may add values, so clients should accept unknown ones
 |---|---|
 | `/` | API name, version and docs links |
 | `/health` | Runs a query against the database: `200` when it succeeds, `503` otherwise |
+| `/meta` | API, SDK and data versions; data build, contract version, row counts and schema hashes |
 
 ### Countries
 

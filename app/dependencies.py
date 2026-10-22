@@ -23,6 +23,13 @@ def create_client() -> InternaciaClient:
     try:
         client = InternaciaClient(db_path=db_path)
         client.countries.count()
+        meta = client.meta()
+        expected = settings.internacia_db_version
+        if expected and meta["version"] != expected.removeprefix("v"):
+            raise RuntimeError(
+                f"internacia-db version {meta['version']} does not match "
+                f"INTERNACIA_DB_VERSION={expected}"
+            )
     except Exception:
         logger.critical(
             "Cannot open internacia-db (INTERNACIA_DB_PATH=%s); refusing to start",
@@ -30,6 +37,13 @@ def create_client() -> InternaciaClient:
             exc_info=True,
         )
         raise
+    logger.info(
+        "Serving internacia-db %s (contract %s, built %s from %s)",
+        meta["version"],
+        meta["contract_version"],
+        meta["build_date"],
+        meta["git_commit"],
+    )
     return client
 
 

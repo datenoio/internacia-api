@@ -8,7 +8,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Dateno", email = "ibegtin@dateno.io" }]
 dependencies = [
-    "internacia>=0.3,<0.4",
+    "internacia>=0.4,<0.5",
     "fastapi>=0.150",
     # FastAPI's own floor still allows starlette releases with known advisories.
     "starlette>=1.3.1",
@@ -33,11 +33,6 @@ dev = [
 [tool.uv]
 package = false
 
-# TEMPORARY: internacia 0.3.0 is not on PyPI yet. Until it is, resolve the SDK from the
-# internacia-python main commit that merged the 0.3.0 stack. Delete this table and run
-# `uv lock --upgrade-package internacia` once 0.3.0 is published.
-[tool.uv.sources]
-internacia = { git = "https://github.com/datenoio/internacia-python", rev = "274d222b5bb8cffe215e8c5ebeb72eb9d7930bed" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

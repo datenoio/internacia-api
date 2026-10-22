@@ -1,0 +1,18 @@
+services:
+  api:
+    image: ghcr.io/datenoio/internacia-api:latest
+    build: .
+    ports:
+      - "8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      CORS_ORIGINS: '["*"]'
+      CACHE_MAX_AGE: "3600"
+    # To serve another internacia-db file, mount it and set its version (or unset the check):
+    # volumes:
+    #   - ./data/internacia.duckdb:/data/internacia.duckdb:ro
+    # environment:
+    #   INTERNACIA_DB_VERSION: "3.1.0"
+    restart: unless-stopped

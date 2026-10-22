@@ -7,9 +7,20 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.caching import EXPOSED_HEADERS, DataVersionMiddleware, data_identity
 from app.config import settings
 from app.dependencies import create_client
-from app.routers import blocks, countries, currencies, health, languages, regions, search, timezones
+from app.routers import (
+    blocks,
+    countries,
+    currencies,
+    health,
+    languages,
+    meta,
+    regions,
+    search,
+    timezones,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +31,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Open the database before serving; startup fails if it cannot be opened."""
     app.state.client = create_client()
+    app.state.data_identity = data_identity(app.state.client.meta())
     yield
 
 
@@ -40,10 +52,14 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET"],
     allow_headers=["*"],
+    expose_headers=EXPOSED_HEADERS,
 )
+
+app.add_middleware(DataVersionMiddleware)
 
 # Register routers
 app.include_router(health.router)
+app.include_router(meta.router)
 app.include_router(countries.router)
 app.include_router(blocks.router)
 app.include_router(search.router)

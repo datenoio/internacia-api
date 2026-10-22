@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Docker image: multi-stage, non-root, read-only-root compatible, `linux/amd64` and
+  `linux/arm64`, with an internacia-db release baked in and checked against its SHA-256;
+  `compose.yaml`; `.github/workflows/docker.yml` builds and smoke-tests the image on pull
+  requests and publishes it to GHCR on `v*` tags as `<api>-db-<db>`, `db-<db>`, `<api>` and
+  `latest`.
+- `GET /meta`: API, SDK and data versions with the database's build identity, contract version,
+  row counts and schema hashes.
+- `X-Internacia-Version` / `X-Internacia-Contract` on every response; weak `ETag`,
+  `Cache-Control` (`CACHE_MAX_AGE`) and `304 Not Modified` for successful `GET`s.
+- `INTERNACIA_DB_VERSION`: startup fails if the database has a different version.
+
+### Changed
+- Requires internacia SDK `>=0.4,<0.5` (data contract check at startup, `meta()`); resolved from
+  git until 0.4.0 is on PyPI.
+
 ## [0.1.0] - Unreleased
 
 First installable release. Targets internacia-db 3.x through the `internacia` SDK 0.3.x.
