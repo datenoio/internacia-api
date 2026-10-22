@@ -9,12 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  # internacia-db release the smoke tests run against. Bump both together, and update the
-  # expected counts in tests/smoke/test_real_db.py if they change.
-  TESTED_DB_VERSION: "3.0.0"
-  TESTED_DB_SHA256: "02c33d6822432ef60bce19b81e33b180221f6d6504c3e163f0e14f866254e01d"
-
 # `uv sync --locked` installs the internacia SDK from git (see [tool.uv.sources] in
 # pyproject.toml) until 0.3.0 is on PyPI.
 
@@ -45,6 +39,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
       - run: uv sync --locked
+
+      # The smoke tests run against the internacia-db release the Docker image bakes in
+      # (ARG INTERNACIA_DB_VERSION / INTERNACIA_DB_SHA256); scripts/data_bump.py moves it.
+      - name: Read the tested internacia-db release from the Dockerfile
+        run: |
+          echo "TESTED_DB_VERSION=$(sed -n 's/^ARG INTERNACIA_DB_VERSION=//p' Dockerfile)" >> "$GITHUB_ENV"
+          echo "TESTED_DB_SHA256=$(sed -n 's/^ARG INTERNACIA_DB_SHA256=//p' Dockerfile)" >> "$GITHUB_ENV"
 
       - name: Cache test database
         uses: actions/cache@v6

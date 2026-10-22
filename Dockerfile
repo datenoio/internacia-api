@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# internacia-db release baked into the image. Bump both together (see .github/workflows/ci.yml).
+# internacia-db release baked into the image; CI's smoke tests run against the same file.
+# scripts/data_bump.py (data-bump.yml) moves both when internacia-db releases.
 ARG INTERNACIA_DB_VERSION=3.0.0
 ARG INTERNACIA_DB_SHA256=02c33d6822432ef60bce19b81e33b180221f6d6504c3e163f0e14f866254e01d
 ARG PYTHON_VERSION=3.12

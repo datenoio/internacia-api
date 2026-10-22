@@ -26,8 +26,14 @@ API for the internacia-db 3.x model. **Breaking:** list responses are paginated.
   (`PRELOAD_CATALOGS`, on by default): `GET /blocks` and `GET /countries` are 5–6 times faster.
 - `docs/self-hosting.md`: reverse proxy (nginx, Caddy, Traefik), forwarded headers, compression,
   rate limiting and sizing.
+- `data-bump.yml`: a pull request per new internacia-db release that rebuilds the image with it,
+  runs the smoke tests and merges automatically when the contract major is unchanged;
+  `release-tag.yml` tags releases from `main`, which publishes the image. Dependabot for Python
+  packages, GitHub Actions and Docker.
 
 ### Changed
+- The smoke tests take their expected counts from the database file, so they pass against
+  any 3.x release; CI reads the tested release from the Dockerfile.
 - **Breaking:** lists return one page with `total`, `limit` (default 100, max 1000), `offset`
   and `next`; `count` is the number of items on the page.
 - Currencies, languages and regions come from the SDK catalogs (internacia-db views) instead of

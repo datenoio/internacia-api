@@ -163,7 +163,8 @@ instance. Things to weigh:
 
 ## Updating the data
 
-Each internacia-db release is a new image tag (`<api>-db-<db>`, `db-<db>`). Roll it out like any
+Each internacia-db release becomes a new image tag (`<api>-db-<db>`, `db-<db>`), usually within a
+day: the data-bump workflow rebuilds and tests it (see the README). Roll it out like any
 stateless deployment; responses from the new instances carry the new `X-Internacia-Version` and
 new ETags. To serve a database the image does not bake in, mount it read-only over
 `/data/internacia.duckdb` and set `INTERNACIA_DB_VERSION` to its version (see the README).
