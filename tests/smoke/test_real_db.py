@@ -20,8 +20,8 @@ ENV_DB_PATH = "INTERNACIA_TEST_DB_PATH"
 Check = Callable[[Any], None]
 
 
-@pytest.fixture(scope="module")
-def api() -> Iterator[TestClient]:
+@pytest.fixture(scope="module", params=[True, False], ids=["preloaded", "uncached"])
+def api(request: pytest.FixtureRequest) -> Iterator[TestClient]:
     db_path = os.getenv(ENV_DB_PATH)
     if not db_path:
         if os.getenv("CI"):
@@ -30,13 +30,13 @@ def api() -> Iterator[TestClient]:
     if not os.path.isfile(db_path):
         pytest.fail(f"{ENV_DB_PATH}={db_path} does not exist")
 
-    previous = settings.internacia_db_path
-    settings.internacia_db_path = db_path
+    previous = settings.internacia_db_path, settings.preload_catalogs
+    settings.internacia_db_path, settings.preload_catalogs = db_path, request.param
     try:
         with TestClient(app) as test_client:
             yield test_client
     finally:
-        settings.internacia_db_path = previous
+        settings.internacia_db_path, settings.preload_catalogs = previous
 
 
 def items(n: int | None = None, at_least: int = 1) -> Check:

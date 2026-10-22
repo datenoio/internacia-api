@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Cache-Control max-age for successful responses, in seconds (0 disables caching headers)
     cache_max_age: int = 3600
 
+    # Load the full lists and catalogs into memory at startup (about 80 MB with 3.0.0 data);
+    # turn off on small instances to query the database on every request instead
+    preload_catalogs: bool = True
+
 
 # Global settings instance
 settings = Settings()
