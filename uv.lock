@@ -403,10 +403,14 @@ wheels = [
 [[package]]
 name = "internacia"
 version = "0.4.0"
-source = { git = "https://github.com/datenoio/internacia-python?rev=61b47f2e5a6b23b29751ea93af7f02c3f7030f82#61b47f2e5a6b23b29751ea93af7f02c3f7030f82" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "duckdb" },
     { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5d/ac/a9919779ac6d4d52916c7bc9fd1539b3391db43db045838007c746e4f0ee/internacia-0.4.0.tar.gz", hash = "sha256:f9ea133cf3db0cb781ec0f9e2cfff0edd96c42fcc2d46f7a08fcbcb7b2ead118", size = 54956, upload-time = "2026-10-22T09:25:44.571Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/ca/dc7d80a3bd9a05492b7f40aa8369c2f21bfcf6922d5cd1dd48fe9bdc1937/internacia-0.4.0-py3-none-any.whl", hash = "sha256:2dbd5f5a3a2163538d428398a06f0ed24eb29b8e44350c7fd863a127e6a16f26", size = 39408, upload-time = "2026-10-22T09:25:43.222Z" },
 ]
 
 [[package]]
@@ -433,7 +437,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.150" },
-    { name = "internacia", git = "https://github.com/datenoio/internacia-python?rev=61b47f2e5a6b23b29751ea93af7f02c3f7030f82" },
+    { name = "internacia", specifier = ">=0.4,<0.5" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-dotenv", specifier = ">=1.2.2" },

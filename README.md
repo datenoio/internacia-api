@@ -19,10 +19,6 @@ Self-hosted, read-only REST API for [internacia-db](https://github.com/datenoio/
 | main | `>=0.4,<0.5` | 3.x (contract 3.x) |
 | 0.1.x | `>=0.3,<0.4` | 3.x |
 
-> **Temporary:** internacia 0.4.0 is not on PyPI yet. Until it is, `pyproject.toml` resolves the
-> SDK from git, pinned to an internacia-python commit (`[tool.uv.sources]`). This goes away once
-> 0.4.0 is published.
-
 ## Docker
 
 ```bash
