@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `/countries/income-level/{id}` description lists the current World Bank income levels
   (`HIC`, `UMC`, `LMC`, `LIC`); the `OEC`/`NOC` split is gone from internacia-db data.
 
+### Data
+
+- Serves internacia-db 4.0.0.
+
 ## [0.2.1] - 2026-10-22
 
 ### Data
