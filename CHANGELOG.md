@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `internacia` SDK `>=0.5,<0.6`: the API serves internacia-db 3.x and 4.x databases. internacia-db
+  4.0 keeps only each country's own languages in `native_names` and deprecates the `associate`
+  and `associated_observer` statuses; no route or response field is added or removed. The data-bump
+  workflow auto-merges a release whose contract major the SDK supports, so it moves to 4.x.
 - `internacia` SDK 0.4.1: `/search` also matches country names in other languages
   (`other_names`) and common names, which internacia-db no longer keeps in `native_names`.
 - The `/countries/income-level/{id}` description lists the current World Bank income levels

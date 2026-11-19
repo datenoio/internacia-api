@@ -11,8 +11,8 @@ CHANGELOG:
 - otherwise it notes the data version in the pending entry, and the image ships with the next
   release.
 
-A release with a different contract major is still written so the pull request shows what
-fails, but it is not marked for auto-merge.
+A release with a contract major the SDK does not support is still written so the pull request
+shows what fails, but it is not marked for auto-merge.
 
 Usage:
     python scripts/data_bump.py [--version 3.1.0] [--pr-body data-bump.md]
@@ -27,7 +27,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
-from internacia.contract import SUPPORTED_CONTRACT_MAJOR, parse_contract
+from internacia.contract import SUPPORTED_CONTRACT_MAJORS, parse_contract, supported_majors_text
 from internacia.downloader import (
     DB_FILE,
     DOWNLOAD_URL,
@@ -155,7 +155,7 @@ def main() -> int:
     if new <= old:
         print(f"Already serving internacia-db {current} (latest: {version})")
     else:
-        same_major = parse_contract(version)[0] == SUPPORTED_CONTRACT_MAJOR
+        same_major = parse_contract(version)[0] in SUPPORTED_CONTRACT_MAJORS
         api_version = bump(
             version, database_sha256(tag), ROOT, datetime.now(UTC).date().isoformat()
         )
@@ -196,10 +196,10 @@ def pr_body(current: str, version: str, same_major: bool, api_version: str | Non
         )
     lines.append("")
     if same_major:
-        lines.append("Same contract major: merges automatically once CI passes.")
+        lines.append("Supported contract major: merges automatically once CI passes.")
     else:
         lines.append(
-            f"**Contract major changed** (the SDK supports {SUPPORTED_CONTRACT_MAJOR}.x): "
+            f"**Contract major changed** (the SDK supports {supported_majors_text()}): "
             "CI is expected to fail until the SDK and the API support it. Not set to auto-merge."
         )
     return "\n".join(lines) + "\n"
