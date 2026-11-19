@@ -110,9 +110,17 @@ def test_main_outputs(repo, monkeypatch, tmp_path_factory):
     assert "ghcr.io/datenoio/internacia-api:0.2.1-db-3.1.0" in (repo / "b").read_text()
 
 
-def test_new_contract_major_is_not_auto_merged(repo, monkeypatch, tmp_path_factory):
+def test_supported_new_contract_major_is_auto_merged(repo, monkeypatch, tmp_path_factory):
     outputs = _run(
         monkeypatch, tmp_path_factory, "--version", "4.0.0", "--pr-body", str(repo / "b")
+    )
+    assert outputs["auto_merge"] == "true"
+    assert "Supported contract major" in (repo / "b").read_text()
+
+
+def test_new_contract_major_is_not_auto_merged(repo, monkeypatch, tmp_path_factory):
+    outputs = _run(
+        monkeypatch, tmp_path_factory, "--version", "5.0.0", "--pr-body", str(repo / "b")
     )
     assert outputs["auto_merge"] == "false"
     assert "Contract major changed" in (repo / "b").read_text()

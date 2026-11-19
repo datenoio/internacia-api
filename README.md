@@ -12,10 +12,11 @@ Self-hosted, read-only REST API for [internacia-db](https://github.com/datenoio/
 
 - Python 3.11+
 - [uv](https://docs.astral.sh/uv/)
-- An `internacia.duckdb` file from an internacia-db 3.x release
+- An `internacia.duckdb` file from an internacia-db 3.x or 4.x release
 
 | internacia-api | internacia SDK | internacia-db |
 |---|---|---|
+| unreleased (main) | `>=0.5,<0.6` | 3.x and 4.x (contract 3.x or 4.x) |
 | 0.2.x | `>=0.4,<0.5` | 3.x (contract 3.x) |
 | 0.1.x | `>=0.3,<0.4` | 3.x |
 
@@ -237,7 +238,7 @@ CI (`.github/workflows/ci.yml`) runs ruff, the unit tests and the smoke test on 
 3.13, then checks that the server starts with the database and refuses to start without it. The
 smoke test uses the internacia-db release the Docker image bakes in (`INTERNACIA_DB_VERSION` and
 `INTERNACIA_DB_SHA256` in the `Dockerfile`) and takes its expected counts from that file, so it
-passes against any 3.x release.
+passes against any release whose contract major the SDK supports (3.x, 4.x).
 
 ### Following internacia-db releases
 

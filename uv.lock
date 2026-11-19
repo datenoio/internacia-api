@@ -402,15 +402,15 @@ wheels = [
 
 [[package]]
 name = "internacia"
-version = "0.4.1"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "duckdb" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/2d/86fb3de36ca9a60f0cf90b2b0e61d91a94c58e0cb0d473c752142ea2e9b1/internacia-0.4.1.tar.gz", hash = "sha256:1d0defc28c776256dba9513c501d90d11f6e236f1db63c403db34b5f3f90062d", size = 55485, upload-time = "2026-11-19T07:46:26.051Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/48/ceb5a1e097fff04ea994ed7e0c9008b6caec553b1919b9feba69913b264d/internacia-0.5.0.tar.gz", hash = "sha256:599fd9b5b2a1637f3f592a0ad632dd68ecbd269b276df3d7932f4e6ddcf620d9", size = 55988, upload-time = "2026-11-19T14:30:47.885Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/24/76b0981e1f709dacdc2dbbb957f73a0a411172b8b750b9a273be27e18cbd/internacia-0.4.1-py3-none-any.whl", hash = "sha256:8e3c91dc9f1930a0d9cd32d189ea5c317b8e19aaafbaa656c8b7133085f72239", size = 39537, upload-time = "2026-11-19T07:46:24.589Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/32/64d34f49ca8aa38f1bc78dc09ce4f48b59c08773acf9d1fdc0dd785a0c1c/internacia-0.5.0-py3-none-any.whl", hash = "sha256:37f7480e51ab4c886a8f35eab0660e6bfb6cb1745b112e0c1b8efc663e7b99ee", size = 39862, upload-time = "2026-11-19T14:30:46.506Z" },
 ]
 
 [[package]]
@@ -437,7 +437,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.150" },
-    { name = "internacia", specifier = ">=0.4,<0.5" },
+    { name = "internacia", specifier = ">=0.5,<0.6" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-dotenv", specifier = ">=1.2.2" },

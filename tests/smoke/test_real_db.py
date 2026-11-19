@@ -3,7 +3,8 @@
 Set ``INTERNACIA_TEST_DB_PATH`` to a release ``internacia.duckdb`` (see
 ``scripts/fetch_test_db.py``). Without it these tests are skipped locally and fail in CI.
 Expected counts come from SQL against the same file (``SQL``), or are lower bounds, so the tests
-pass unchanged against any 3.x release; the data-bump workflow relies on that.
+pass unchanged against any release whose contract major the SDK supports (3.x, 4.x); the
+data-bump workflow relies on that.
 """
 
 import os
@@ -13,6 +14,7 @@ from typing import Any
 import duckdb
 import pytest
 from fastapi.testclient import TestClient
+from internacia import SUPPORTED_CONTRACT_MAJORS
 
 from app.config import settings
 from app.main import app
@@ -225,8 +227,9 @@ def test_route_error(api: TestClient, path: str, status: int) -> None:
 
 def test_meta_and_cache_headers(api: TestClient) -> None:
     meta = api.get("/meta").json()["data"]
-    assert meta["version"].startswith("3.")
-    assert meta["contract_version"].startswith("3.")
+    major = int(meta["contract_version"].split(".")[0])
+    assert major in SUPPORTED_CONTRACT_MAJORS
+    assert meta["version"].split(".")[0] == str(major)
     assert meta["datasets"]["countries"]["row_count"] == 256
     response = api.get("/blocks/EU")
     assert response.headers["X-Internacia-Version"] == meta["version"]
