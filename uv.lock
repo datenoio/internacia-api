@@ -402,15 +402,15 @@ wheels = [
 
 [[package]]
 name = "internacia"
-version = "0.4.0"
+version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "duckdb" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/ac/a9919779ac6d4d52916c7bc9fd1539b3391db43db045838007c746e4f0ee/internacia-0.4.0.tar.gz", hash = "sha256:f9ea133cf3db0cb781ec0f9e2cfff0edd96c42fcc2d46f7a08fcbcb7b2ead118", size = 54956, upload-time = "2026-10-22T09:25:44.571Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/2d/86fb3de36ca9a60f0cf90b2b0e61d91a94c58e0cb0d473c752142ea2e9b1/internacia-0.4.1.tar.gz", hash = "sha256:1d0defc28c776256dba9513c501d90d11f6e236f1db63c403db34b5f3f90062d", size = 55485, upload-time = "2026-11-19T07:46:26.051Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/ca/dc7d80a3bd9a05492b7f40aa8369c2f21bfcf6922d5cd1dd48fe9bdc1937/internacia-0.4.0-py3-none-any.whl", hash = "sha256:2dbd5f5a3a2163538d428398a06f0ed24eb29b8e44350c7fd863a127e6a16f26", size = 39408, upload-time = "2026-10-22T09:25:43.222Z" },
+    { url = "https://files.pythonhosted.org/packages/25/24/76b0981e1f709dacdc2dbbb957f73a0a411172b8b750b9a273be27e18cbd/internacia-0.4.1-py3-none-any.whl", hash = "sha256:8e3c91dc9f1930a0d9cd32d189ea5c317b8e19aaafbaa656c8b7133085f72239", size = 39537, upload-time = "2026-11-19T07:46:24.589Z" },
 ]
 
 [[package]]
