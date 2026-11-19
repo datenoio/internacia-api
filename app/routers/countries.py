@@ -88,8 +88,7 @@ def list_countries_by_income_level(
     fields: FieldsParam = None,
 ):
     """
-    Countries in a World Bank income level (e.g. `LMC`, `UMC`, `LIC`; high income is split
-    into `NOC` and `OEC`).
+    Countries in a World Bank income level: `HIC`, `UMC`, `LMC` or `LIC`.
     """
     return _list(client.countries.get_by_income_level(income_level_id), request, paging, fields)
 
