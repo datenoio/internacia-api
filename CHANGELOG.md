@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `internacia` SDK 0.4.1: `/search` also matches country names in other languages
+  (`other_names`) and common names, which internacia-db no longer keeps in `native_names`.
 - The `/countries/income-level/{id}` description lists the current World Bank income levels
   (`HIC`, `UMC`, `LMC`, `LIC`); the `OEC`/`NOC` split is gone from internacia-db data.
 
