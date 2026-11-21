@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Data
 
-- Serves internacia-db 4.2.0.
+- Serves internacia-db 4.3.0.
 
 ## [0.2.1] - 2026-10-22
 

@@ -2,8 +2,8 @@
 
 # internacia-db release baked into the image; CI's smoke tests run against the same file.
 # scripts/data_bump.py (data-bump.yml) moves both when internacia-db releases.
-ARG INTERNACIA_DB_VERSION=4.2.0
-ARG INTERNACIA_DB_SHA256=245458e3e3121c400ac4b8c7c07bd9808bea82d116c64958f990f836773233d8
+ARG INTERNACIA_DB_VERSION=4.3.0
+ARG INTERNACIA_DB_SHA256=c829f3724eed6b92bbb6ac6e92824c3367345f20aaba62d465d6f95c815d2167
 ARG PYTHON_VERSION=3.12
 
 FROM debian:bookworm-slim AS data
