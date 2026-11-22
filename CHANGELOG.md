@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-22
+
 ### Changed
 - `internacia` SDK `>=0.5,<0.6`: the API serves internacia-db 3.x and 4.x databases. internacia-db
   4.0 keeps only each country's own languages in `native_names` and deprecates the `associate`
@@ -19,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Data
 
-- Serves internacia-db 4.4.0.
+- Serves internacia-db 4.4.0 (image `0.3.0-db-4.4.0`).
 
 ## [0.2.1] - 2026-10-22
 
